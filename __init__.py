@@ -1,7 +1,7 @@
 from flask import Flask
 from routes import bp
 import pymongo
-
+#WHATS FOOD
 app = Flask(__name__)
 app.register_blueprint(bp)
 # app.config["MONGO_URI"] = "mongodb://localhost:27017/myDatabase"
