@@ -1,0 +1,11 @@
+.cell {
+	position: relative;
+	height:100px;
+	width: 100px;
+	border: solid blue 1px;
+	
+	margin-top:1px;
+}
+span{
+	font-size: 30px;
+}

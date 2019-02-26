@@ -1,0 +1,22 @@
+<!doctype html>
+
+<html>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script type="text/javascript" src='/static/jQuery.js'></script>
+		<link rel="stylesheet" href="../static/index.css">
+
+		<title>Tic Tac Toe Sign In</title>
+	</head>
+		
+	<body>
+		<form  method='post' action="{{url_for('login'  )}}"> 
+			
+			Username: <input type="text" name="username" /><br><br>
+			Password: <input type='password' name="password"/><br><br>
+			<button id='indexSubmit' type='submit' > Submit </button> 
+		
+		</form>
+	</body>	
+
+</html>
