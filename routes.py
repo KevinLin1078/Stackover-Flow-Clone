@@ -24,13 +24,14 @@ def adduser():
 	email = request.form['email']
 	password = generate_password_hash(request.form['password'])
 
-	print(username)
-	print(email)
-	print(password)
-	'''
-	Setup mongodb databse to store users
-	'''
-	return username + " " + email + " " + password;
+	data = {
+			'status': 'OK'
+		}
+	jsonData = json.dumps(data)
+	respond = Response(jsonData, status=200, mimetype='application/json')
+	return respond
+
+
 
 
 
