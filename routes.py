@@ -9,38 +9,27 @@ bp = Blueprint('routes', __name__, template_folder='templates')
 CORS(bp)
 start = [0]
 
-
-
 @bp.route('/', methods=['GET','POST'])
 def index():
 	return redirect(url_for('routes.adduser'))
 
 
-@bp.route('/adduser/', methods=["POST", "GET"])
+@bp.route('/adduser', methods=["POST", "GET"])
 #@crossdomain(origin='*',headers=['access-control-allow-origin','Content-Type'])
 def adduser():	
 	if request.method == "GET":
 		print("GET");
-	else:
-		print("POST")
-	#username = request.form['username']
-	#email = request.form['email']
-	#password = generate_password_hash(request.form['password'])
-	#print('user: ', username)
-	#print('pass: ', password)
-	#print('email:', email)
+		return render_template('adduser.html')
+	elif request.method == "POST":
+		print("Request Json =========================POST==========================")
+		jsonObj = request.json
+		username = jsonObj['username']
+		email = jsonObj['email']
+		password = jsonObj['password']
+		
 	data = {
-		'status': 'OK'
+			'status': 'OK'
 	}
-	print("Request Data =======================================================")
-	print(request.headers)
-	print("Request Json =====================================================")
-	jss = request.json
-	print(jss)
-	#print("Request Args==============================================================")
-	#print(request.form.get('name') )
-	#print(request.form.get('password') )
-	#print(request.form.get('email') )
 	jsonData = json.dumps(data)
 	respond = Response(jsonData, status=200, mimetype='application/json')
 	return respond
