@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort, jsonify
 from flask import Flask, request, url_for, json, redirect, Response
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -12,22 +12,24 @@ start = [0]
 
 
 @bp.route('/', methods=['GET','POST'])
-def index():
-	return redirect(url_for('routes.adduser'))
+def index()
+:
+	#return redirect(url_for('routes.adduser'))
 
 @bp.route('/adduser/', methods=["POST", "GET"])
 def adduser():
-	#if request.method == 'GET':
-	#	return render_template('adduser.html')
+	print(request);
+	if request.method == 'GET':
+		return render_template('adduser.html')
 	
 	username = request.form['username']
 	email = request.form['email']
 	password = generate_password_hash(request.form['password'])
-	
+
 	data = {
 			'status': 'OK'
 		}
-	print("REQUEST: " , request.headers)
+	print(request)
 	jsonData = json.dumps(data)
 	respond = Response(jsonData, status=200, mimetype='application/json')
 	return respond
