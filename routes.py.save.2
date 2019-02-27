@@ -1,12 +1,12 @@
 from flask import Blueprint, render_template, abort
 from flask import Flask, request, url_for, json, redirect, Response
 from werkzeug.security import check_password_hash, generate_password_hash
-import tictac, datetime
-from flask_cors import CORS
-
+from pprint import pprint
+import tictac
+import datetime
 
 bp = Blueprint('routes', __name__, template_folder='templates')
-CORS(bp)
+
 start = [0]
 
 
@@ -15,14 +15,8 @@ start = [0]
 def index():
 	return redirect(url_for('routes.adduser'))
 
-
 @bp.route('/adduser/', methods=["POST", "GET"])
-#@crossdomain(origin='*',headers=['access-control-allow-origin','Content-Type'])
 def adduser():	
-	if request.method == "GET":
-		print("GET");
-	else:
-		print("POST")
 	#username = request.form['username']
 	#email = request.form['email']
 	#password = generate_password_hash(request.form['password'])
@@ -32,15 +26,7 @@ def adduser():
 	data = {
 		'status': 'OK'
 	}
-	print("Request Data =======================================================")
-	print(request.headers)
-	print("Request Json =====================================================")
-	jss = request.json
-	print(jss)
-	#print("Request Args==============================================================")
-	#print(request.form.get('name') )
-	#print(request.form.get('password') )
-	#print(request.form.get('email') )
+	print("REQUEST here2: ")
 	jsonData = json.dumps(data)
 	respond = Response(jsonData, status=200, mimetype='application/json')
 	return respond
@@ -50,20 +36,7 @@ def adduser():
 
 @bp.route('/verify/', methods=["POST", "GET"])
 def verify():
-	print("Verifyy Args==============================================================")
-        jss =request.get_json()
-        print(jss)
-	
-	#print(request.form.get('username') )
-        #print(request.form.get('password') )
-        #print(request.form.get('email') )
-
-	data = {
-                'status': 'OK'
-        }
-	jsonData = json.dumps(data)
-        respond = Response(jsonData, status=200, mimetype='application/json')
-        return respond
+	p
 
 @bp.route('/login/', methods=["POST", "GET"])
 def login():
