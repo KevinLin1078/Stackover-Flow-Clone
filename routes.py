@@ -27,7 +27,7 @@ bp = Blueprint('routes', __name__, template_folder='templates')
 CORS(bp)
 start = [0]
 
-tempEmail = None
+
 
 
 @bp.route('/', methods=['GET','POST'])
@@ -42,10 +42,14 @@ def adduser():
 		return render_template('adduser.html')
 	elif request.method == "POST":
 		print("Request Json =========================POST==========================")
-		jsonObj = request.json
-		print(jsonObj)
-		userTable.insert( jsonObj)
-		tempEmail = jsonObj['email']
+		jss = request.json
+		print(jss)
+		userTable.insert( jss)
+
+		query = {'email' : jss['email']}
+		newVal = {"$set": {"key": "deny" }}  
+		userTable.update_one(query, newVal)
+		
 	data = {
 			'status': 'OK'
 	}
@@ -60,17 +64,18 @@ def verify():
 	if request.method == 'GET':
 		return render_template('index.html')
 	elif request.method == 'POST':
-		print("=========================VERIFY POST===============================")
 		jss =request.json
+		print("=========================VERIFY POST===============================")
 		print("POST VERIFY JSON" , jss)
-
-		query = {'email' : str(tempEmail)}
-		newVal = {"$set": {"key": str(jss['key']) }}  
 		msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[jss['email']])
 		msg.body = jss['key']
 		mail.send(msg)
 		if(jss['key'] != 'abracadabra'):
 			return responseOK("ERROR")
+		else:
+			query = {'email' : jss['email']}
+			newVal = {"$set": {"key": "approve" }}  
+			userTable.update_one(query, newVal)
 
 
 		print("MESSAGE SENT*****************************************")
@@ -82,11 +87,19 @@ def login():
 	if request.method == 'GET':
 		return render_template('index.html')
 	elif request.method == 'POST':
-		print("=========================LOGIN POST===============================")
 		jss =request.json
+		print("=========================LOGIN POST===============================")
 		print("POST LOGIN JSON" , jss)
-	
-
+		get_user = userTable.find_one( { 'username': str(jss['username']) } )
+		
+		
+		if get_user['password'] != jss['password']:
+			print("Wrong password")
+			return responseOK('ERROR');
+		else:
+			if get_user['key'] != 'approve':
+				return responseOK("ERROR")
+		
 	return responseOK('OK')
 
 @bp.route('/logout', methods=["POST", "GET"])
@@ -144,9 +157,6 @@ def play():
 		jsonData = json.dumps(data)
 		respond = Response(jsonData, status=200, mimetype='application/json')
 		return respond
-
-
-
 
 
 

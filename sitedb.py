@@ -9,10 +9,10 @@ db = client['wp2']         #    use wp2
 
 userTable = db['user'] 
 
-#userTable.remove()
+userTable.remove()
 #userTable.insert({'email': "kevin" , 'pass': None} )
 
 
-query = {"email": "mykey"}
-newVal = {"$set": {"key": "KKKK"}}  
-userTable.update_one(query, newVal)
+#query = {"email": "mykey"}
+#newVal = {"$set": {"key": "KKKK"}}  
+#userTable.update_one(query, newVal)
