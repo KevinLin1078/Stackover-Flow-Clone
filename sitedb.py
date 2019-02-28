@@ -5,21 +5,9 @@ from pymongo import MongoClient
 app = Flask(__name__)
 
 client = MongoClient()
-db = client.test_database
-collection = db['test_database']
-import datetime
+db = client.wp2 # use wp2
 
-import pprint
-from pprint import pprint
 
-post = {
-	"author": "mike",
-	"date": datetime.datetime.utcnow()
-}
-db.posts.insert(post)
-db.collection.find() 
-cursor = collection.find({})
-for document in cursor: 
-    print(document)
+userTable = db['user'] # 
 
-print ( "hello world" )
+userTable.remove()

@@ -3,6 +3,42 @@ from flask import Flask, request, url_for, json, redirect, Response
 from werkzeug.security import check_password_hash, generate_password_hash
 import tictac, datetime
 from flask_cors import CORS
+from flask_mail import Mail
+from flask_mail import Message
+import pymongo 
+from pymongo import MongoClient
+
+app = Flask(__name__)
+client = MongoClient()
+db = client.wp2 
+userTable = db['user']
+
+#app.config['DEBUG'] = True
+#app.config['TESTING'] = False
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+#app.config['MAIL_DEBUG'] = Tru
+app.config['MAIL_USERNAME'] ='ktube110329@gmail.com'
+app.config['MAIL_PASSWORD']= '@12345678kn'
+#app.config['MAIL_DEFAULT_SENDER']= None
+#app.config['MAIL_MAX_EMAILS']= None
+#app.config['MAIL_SUPPRESS_SEND'] = False
+#app.config['MAIL_ASCII_ATTACHMENTS'] = False
+
+
+
+
+
+
+#app.config.update(dict(DEBUG=True, MAIL_SERVER = 'smtp.gmail.com',MAIL_PORT = 587,MAIL_USE_TLS = True,MAIL_USE_SSL = False,MAIL_USERNAME = 'bluekevin61@gmail.com',MAIL_PASSWORD = 'QWERTYUIO'))
+
+
+
+
+mail = Mail(app)
 
 
 bp = Blueprint('routes', __name__, template_folder='templates')
@@ -15,7 +51,6 @@ def index():
 
 
 @bp.route('/adduser', methods=["POST", "GET"])
-#@crossdomain(origin='*',headers=['access-control-allow-origin','Content-Type'])
 def adduser():	
 	if request.method == "GET":
 		print("GET");
@@ -23,9 +58,8 @@ def adduser():
 	elif request.method == "POST":
 		print("Request Json =========================POST==========================")
 		jsonObj = request.json
-		username = jsonObj['username']
-		email = jsonObj['email']
-		password = jsonObj['password']
+		print(jsonObj)
+		userTable.insert( jsonObj)
 		
 	data = {
 			'status': 'OK'
@@ -37,16 +71,19 @@ def adduser():
 
 
 
-@bp.route('/verify/', methods=["POST", "GET"])
+@bp.route('/verify', methods=["POST", "GET"])
 def verify():
-	print("Verifyy Args==============================================================")
-        jss =request.get_json()
-        print(jss)
-	
-	#print(request.form.get('username') )
-        #print(request.form.get('password') )
-        #print(request.form.get('email') )
-
+	if request.method == 'GET':
+		print("VERIFY GET ====================================")
+		return render_template('index.html')
+	elif request.method == 'POST':
+		print("Verifyy POST Args==============================================================")
+        	jss =request.get_json()
+        	print(jss)
+		msg = Message("Hello",sender="ktube110329@gmail.com", recipients=["kevin.lin101996@gmail.com"])
+		msg.body = "Its 356"
+		mail.send(msg)
+		print("MESSAGE SENT*****************************************")
 	data = {
                 'status': 'OK'
         }
