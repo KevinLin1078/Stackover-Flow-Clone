@@ -1,5 +1,4 @@
-from flask import Blueprint, render_template, abort
-from flask import Flask, request, url_for, json, redirect, Response
+from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g
 from werkzeug.security import check_password_hash, generate_password_hash
 import tictac, datetime
 from flask_cors import CORS
@@ -30,6 +29,12 @@ start = [0]
 
 
 
+# @app.before_request
+# def beforeRequest():
+# 	g.user = None
+# 	if 'user' in session:
+# 		return session['user']
+
 @bp.route('/', methods=['GET','POST'])
 def index():
 	return redirect(url_for('routes.adduser'))
@@ -41,7 +46,7 @@ def adduser():
 		print("GET");
 		return render_template('adduser.html')
 	elif request.method == "POST":
-		print("Request Json =========================POST==========================")
+		print("Request Json ======================ADDUSER POST==========================")
 		jss = request.json
 		print(jss)
 		userTable.insert( jss)
@@ -50,12 +55,7 @@ def adduser():
 		newVal = {"$set": {"key": "deny" }}  
 		userTable.update_one(query, newVal)
 		
-	data = {
-			'status': 'OK'
-	}
-	jsonData = json.dumps(data)
-	respond = Response(jsonData, status=200, mimetype='application/json')
-	return respond
+	return responseOK("OK")
 
 
 
@@ -92,23 +92,37 @@ def login():
 		print("POST LOGIN JSON" , jss)
 		get_user = userTable.find_one( { 'username': str(jss['username']) } )
 		
-		
 		if get_user['password'] != jss['password']:
 			print("Wrong password")
 			return responseOK('ERROR');
 		else:
 			if get_user['key'] != 'approve':
 				return responseOK("ERROR")
-		
+			
+			session.clear()
+			session['user'] = jss['username']
+	
 	return responseOK('OK')
+
 
 @bp.route('/logout', methods=["POST", "GET"])
 def logout():
-	pass
+	if request.method =="POST":
+		print("=========================LOGOUT POST===============================")
+		session.clear()
+		return responseOK("OK")	
+
+	return responseOK("OK")
 
 @bp.route('/listgames', methods=["POST", "GET"])
 def listgames():
-	pass
+	if request.method == 'POST':
+		print("=========================LISTGAMES POST===============================")
+		jss = request.json
+		print(jss)
+
+
+	return responseOK("OK")
 
 @bp.route('/getgame', methods=["POST", "GET"])
 def getgame():
