@@ -13,37 +13,22 @@ client = MongoClient()
 db = client.wp2 
 userTable = db['user']
 
-#app.config['DEBUG'] = True
-#app.config['TESTING'] = False
-
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
-#app.config['MAIL_DEBUG'] = Tru
 app.config['MAIL_USERNAME'] ='ktube110329@gmail.com'
 app.config['MAIL_PASSWORD']= '@12345678kn'
-#app.config['MAIL_DEFAULT_SENDER']= None
-#app.config['MAIL_MAX_EMAILS']= None
-#app.config['MAIL_SUPPRESS_SEND'] = False
-#app.config['MAIL_ASCII_ATTACHMENTS'] = False
-
-
-
-
-
-
 #app.config.update(dict(DEBUG=True, MAIL_SERVER = 'smtp.gmail.com',MAIL_PORT = 587,MAIL_USE_TLS = True,MAIL_USE_SSL = False,MAIL_USERNAME = 'bluekevin61@gmail.com',MAIL_PASSWORD = 'QWERTYUIO'))
-
-
-
-
 mail = Mail(app)
 
 
 bp = Blueprint('routes', __name__, template_folder='templates')
 CORS(bp)
 start = [0]
+
+tempEmail = None
+
 
 @bp.route('/', methods=['GET','POST'])
 def index():
@@ -60,7 +45,7 @@ def adduser():
 		jsonObj = request.json
 		print(jsonObj)
 		userTable.insert( jsonObj)
-		
+		tempEmail = jsonObj['email']
 	data = {
 			'status': 'OK'
 	}
@@ -70,44 +55,53 @@ def adduser():
 
 
 
-
 @bp.route('/verify', methods=["POST", "GET"])
 def verify():
 	if request.method == 'GET':
-		print("VERIFY GET ====================================")
 		return render_template('index.html')
 	elif request.method == 'POST':
-		print("Verifyy POST Args==============================================================")
-        	jss =request.get_json()
-        	print(jss)
-		msg = Message("Hello",sender="ktube110329@gmail.com", recipients=["kevin.lin101996@gmail.com"])
-		msg.body = "Its 356"
+		print("=========================VERIFY POST===============================")
+		jss =request.json
+		print("POST VERIFY JSON" , jss)
+
+		query = {'email' : str(tempEmail)}
+		newVal = {"$set": {"key": str(jss['key']) }}  
+		msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[jss['email']])
+		msg.body = jss['key']
 		mail.send(msg)
+		if(jss['key'] != 'abracadabra'):
+			return responseOK("ERROR")
+
+
 		print("MESSAGE SENT*****************************************")
-	data = {
-                'status': 'OK'
-        }
-	jsonData = json.dumps(data)
-        respond = Response(jsonData, status=200, mimetype='application/json')
-        return respond
+	
+	return responseOK('OK')
 
-@bp.route('/login/', methods=["POST", "GET"])
+@bp.route('/login', methods=["POST", "GET"])
 def login():
-	pass
+	if request.method == 'GET':
+		return render_template('index.html')
+	elif request.method == 'POST':
+		print("=========================LOGIN POST===============================")
+		jss =request.json
+		print("POST LOGIN JSON" , jss)
+	
 
-@bp.route('/logout/', methods=["POST", "GET"])
+	return responseOK('OK')
+
+@bp.route('/logout', methods=["POST", "GET"])
 def logout():
 	pass
 
-@bp.route('/listgames/', methods=["POST", "GET"])
+@bp.route('/listgames', methods=["POST", "GET"])
 def listgames():
 	pass
 
-@bp.route('/getgame/', methods=["POST", "GET"])
+@bp.route('/getgame', methods=["POST", "GET"])
 def getgame():
 	pass
 
-@bp.route('/getscore/', methods=["POST", "GET"])
+@bp.route('/getscore', methods=["POST", "GET"])
 def getscore():
 	pass
 
@@ -163,4 +157,9 @@ def winningResponse(board, winner):
 	}
 	jsonData = json.dumps(data)
 	respond = Response(jsonData, status=200, mimetype='application/json')
+	return respond
+def responseOK(stat):
+	data = {'status': stat}
+	jsonData = json.dumps(data)
+	respond = Response(jsonData,status=200, mimetype='application/json')
 	return respond
