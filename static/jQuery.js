@@ -23,7 +23,7 @@ $(document).ready(function(){
 				url: '/ttt/play',
 				contentType:"application/json",
 	            dataType:"json",
-				data: JSON.stringify({'grid' : actualBoard}),
+				data: JSON.stringify({'grid' : actualBoard, 'move': index}),
 				type: 'POST',
 				success: function(resp){
 					var grid = resp['grid'];// computers next move

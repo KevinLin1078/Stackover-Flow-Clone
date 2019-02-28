@@ -25,7 +25,7 @@ mail = Mail(app)
 bp = Blueprint('routes', __name__, template_folder='templates')
 CORS(bp)
 start = [0]
-
+#board = [ ' ',' ',' ',' ',' ',' ',' ',' ',' ']
 
 
 
@@ -120,9 +120,10 @@ def listgames():
 		print("=========================LISTGAMES POST===============================")
 		jss = request.json
 		print(jss)
+		print(jss == {})
+		return responseOK2( "OK", [])
 
-
-	return responseOK("OK")
+	return responseOK2( "OK", [])
 
 @bp.route('/getgame', methods=["POST", "GET"])
 def getgame():
@@ -149,11 +150,17 @@ def ttt():
 
 @bp.route('/ttt/play', methods=['GET', 'POST'])
 def play():
-	jsonReceived = request.json
-	print("updated ", jsonReceived)
-	board = jsonReceived['grid'] # Array view of the board
+	jss = request.json
+	board = jss['grid']
+	step = jss['move']
+	print("PROFESSOR: ", jss)
+	if step == None:
+		return  winningResponse(board, ' ')
+	else:
+		board[step] = 'X'
+		
 	start[0]+=1
-
+	
 
 	if(tictac.findWinner(board)[0] ==  True ):
 		return winningResponse(board, tictac.findWinner(board)[1] )#if human wins
@@ -184,6 +191,14 @@ def winningResponse(board, winner):
 	return respond
 def responseOK(stat):
 	data = {'status': stat}
+	jsonData = json.dumps(data)
+	respond = Response(jsonData,status=200, mimetype='application/json')
+	return respond
+def responseOK2(stat, grid):
+	data = {
+		'status': stat,
+		'games': grid
+	}
 	jsonData = json.dumps(data)
 	respond = Response(jsonData,status=200, mimetype='application/json')
 	return respond
