@@ -21,7 +21,7 @@ app.config['MAIL_PASSWORD']= '@12345678kn'
 #app.config.update(dict(DEBUG=True, MAIL_SERVER = 'smtp.gmail.com',MAIL_PORT = 587,MAIL_USE_TLS = True,MAIL_USE_SSL = False,MAIL_USERNAME = 'bluekevin61@gmail.com',MAIL_PASSWORD = 'QWERTYUIO'))
 mail = Mail(app)
 
-
+hackName = None
 bp = Blueprint('routes', __name__, template_folder='templates')
 CORS(bp)
 start = [0]
@@ -81,6 +81,7 @@ def verify():
 
 @bp.route('/login', methods=["POST", "GET"])
 def login():
+	global hackName
 	if request.method == 'GET':
 		return render_template('index.html')
 	elif request.method == 'POST':
@@ -98,7 +99,9 @@ def login():
 			
 			session.clear()
 			session['user'] = jss['username']
+			hackName = jss['username']
 			user = session['user']
+
 			query = {'username' :  user}
 			newVal = {"$set": {"board": [ ' ',' ',' ',' ',' ',' ',' ',' ',' '] }}  
 			userTable.update_one(query, newVal)
@@ -111,18 +114,23 @@ def logout():
 	if request.method =="POST":
 		print("=========================LOGOUT POST===============================")
 		session.clear()
+		hackName = None
 		return responseOK("OK")	
 
 	return responseOK("OK")
 
 @bp.route('/listgames', methods=["POST", "GET"])
 def listgames():
+	global hackName
+
 	if request.method == 'POST':
 		print("=========================LISTGAMES POST===============================")
-		jss = request.json
-		print(jss)
-		user = session['user']
-		
+		user = None
+		if len(session) == 0: #also add hackName != None
+			user = hackName;
+		else:
+			user = session['user']
+
 		query = {'username': user}
 		board = userTable.find_one(query)['board']
 		if board == [ ' ',' ',' ',' ',' ',' ',' ',' ',' ']:
@@ -158,19 +166,29 @@ def ttt():
 
 @bp.route('/ttt/play', methods=['GET', 'POST'])
 def play():
+	global hackName
+	print("=========================TTT/PLAY POST===============================")
 	jss = request.json
 	step = jss['move']
-	user = session['user']
+	print("SESSION: ", [len(session), session])
+	if len(session) == 0:
+		user = hackName
+	else:
+		user = session['user']
+
+
 	if step == None:
+		query = {'username' : user}
+		board = userTable.find_one(query)['board']
 		return  winningResponse(board, ' ')
 	
 	query = {'username' : user}
 	board = userTable.find_one(query)['board']
 	board[step] = 'X';
 
-	# newVal = {"$set": {"board": board }}  
-	# userTable.update_one(query, newVal)
-	
+	newVal = {"$set": {"board": board }}  
+	userTable.update_one(query, newVal)
+	print("board1-1: ", board)
 
 	start[0]+=1
 	
@@ -178,6 +196,7 @@ def play():
 	if(tictac.findWinner(board)[0] ==  True ):
 		newVal = {"$set": {"board": board }}  
 		userTable.update_one(query, newVal)
+		print("board2-1: " , board)
 		return winningResponse(board, tictac.findWinner(board)[1] )#if human wins
 
 	if(tictac.findWinner(board)[0] ==  False ):
@@ -185,7 +204,7 @@ def play():
 		
 		newVal = {"$set": {"board": board }}  
 		userTable.update_one(query, newVal)
-		
+		print("board2-2: " , board)
 		if(answer[1]== 'O' ):
 			return winningResponse(board, 'O') #if computer wins
 		
