@@ -11,7 +11,10 @@ userTable = db['user']
 
 userTable.remove()
 #userTable.insert({'email': "kevin" , 'pass': None} )
+#userTable.insert({'email': "nicole" , 'pass': None} )
 
+
+#print( userTable.find_one({'email':'nicole'})['email']          )
 
 #query = {"email": "mykey"}
 #newVal = {"$set": {"key": "KKKK"}}  

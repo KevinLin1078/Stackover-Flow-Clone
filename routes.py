@@ -16,7 +16,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] ='ktube110329@gmail.com'
+app.config['MAIL_USERNAME'] ='ktube11032@gmail.com'
 app.config['MAIL_PASSWORD']= '@12345678kn'
 #app.config.update(dict(DEBUG=True, MAIL_SERVER = 'smtp.gmail.com',MAIL_PORT = 587,MAIL_USE_TLS = True,MAIL_USE_SSL = False,MAIL_USERNAME = 'bluekevin61@gmail.com',MAIL_PASSWORD = 'QWERTYUIO'))
 mail = Mail(app)
@@ -25,9 +25,6 @@ mail = Mail(app)
 bp = Blueprint('routes', __name__, template_folder='templates')
 CORS(bp)
 start = [0]
-#board = [ ' ',' ',' ',' ',' ',' ',' ',' ',' ']
-
-
 
 # @app.before_request
 # def beforeRequest():
@@ -67,9 +64,9 @@ def verify():
 		jss =request.json
 		print("=========================VERIFY POST===============================")
 		print("POST VERIFY JSON" , jss)
-		msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[jss['email']])
-		msg.body = jss['key']
-		mail.send(msg)
+		#msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[jss['email']])
+		#msg.body = jss['key']
+		#mail.send(msg)
 		if(jss['key'] != 'abracadabra'):
 			return responseOK("ERROR")
 		else:
@@ -101,6 +98,10 @@ def login():
 			
 			session.clear()
 			session['user'] = jss['username']
+			user = session['user']
+			query = {'username' :  user}
+			newVal = {"$set": {"board": [ ' ',' ',' ',' ',' ',' ',' ',' ',' '] }}  
+			userTable.update_one(query, newVal)
 	
 	return responseOK('OK')
 
@@ -120,8 +121,15 @@ def listgames():
 		print("=========================LISTGAMES POST===============================")
 		jss = request.json
 		print(jss)
-		print(jss == {})
-		return responseOK2( "OK", [])
+		user = session['user']
+		
+		query = {'username': user}
+		board = userTable.find_one(query)['board']
+		if board == [ ' ',' ',' ',' ',' ',' ',' ',' ',' ']:
+			return responseOK2( "OK", [])
+
+		date = datetime.date.today()
+		return responseOK2( "OK", [{'id':3, 'start_date': date}])
 
 	return responseOK2( "OK", [])
 
@@ -151,22 +159,32 @@ def ttt():
 @bp.route('/ttt/play', methods=['GET', 'POST'])
 def play():
 	jss = request.json
-	board = jss['grid']
 	step = jss['move']
-	print("PROFESSOR: ", jss)
+	user = session['user']
 	if step == None:
 		return  winningResponse(board, ' ')
-	else:
-		board[step] = 'X'
-		
+	
+	query = {'username' : user}
+	board = userTable.find_one(query)['board']
+	board[step] = 'X';
+
+	# newVal = {"$set": {"board": board }}  
+	# userTable.update_one(query, newVal)
+	
+
 	start[0]+=1
 	
 
 	if(tictac.findWinner(board)[0] ==  True ):
+		newVal = {"$set": {"board": board }}  
+		userTable.update_one(query, newVal)
 		return winningResponse(board, tictac.findWinner(board)[1] )#if human wins
 
 	if(tictac.findWinner(board)[0] ==  False ):
 		answer = tictac.getNextMove(board, start[0])
+		
+		newVal = {"$set": {"board": board }}  
+		userTable.update_one(query, newVal)
 		
 		if(answer[1]== 'O' ):
 			return winningResponse(board, 'O') #if computer wins
