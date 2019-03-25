@@ -12,10 +12,16 @@ answerTable = db['answer']
 aidTable = db['answer_id']
 questionTable = db['question']
 pidTable = db['pid']
+ipTable = db['ip']
 
 
-pidTable.insert({'pid':'pid', 'id': 1})
-aidTable.insert({'aid':'aid', 'id': 1})
+
+#pidTable.insert({'pid':'pid', 'id': 1})
+#aidTable.insert({'aid':'aid', 'id': 1})
+
+hey = ipTable.find_one({'ip':'hey'})
+print(hey)
+
 
 
 

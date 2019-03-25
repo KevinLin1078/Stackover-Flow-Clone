@@ -30,7 +30,7 @@ answerTable = db['answer']
 aidTable = db['answer_id']
 questionTable = db['question']
 pidTable = db['pid']
-
+ipTable = db['ip']
 
 @bp.route('/', methods=['GET','POST'])
 def index():
@@ -149,7 +149,8 @@ def addQuestion():
 						'view_count': 0,
 						'time' : (time.time()),
 						'pid' : pid,         # id of question
-						'media': []
+						'media': None,
+						'body': body
 					}
 		
 		pid = str(pid)
@@ -162,41 +163,133 @@ def getQuestion(IDD):
 	if request.method == 'GET':
 		print("=========================QUESTION/ID====ID===ID========================")
 		pid = int(IDD)
+		print("ID IS: ", pid)
 		result = questionTable.find_one({'pid':pid})
 		if( result == None):
-			print("NONE FOUND")
+			print("QUESTION ID DOESNT EXIST")
+			print(request.remote_addr)
 			return responseOK({'status':'error', 'error': 'id doesnt exist'})
+		ip = request.remote_addr
+		ip = str(ip)
+		plus = 0
+
+		if len(session) == 0:
+			if ipTable.find_one({'ip':ip , 'pid':pid}) == None:
+				ipTable.insert({'ip':ip, 'pid': pid})
+				print('USER NOT LOGGED IN AND IP DOES NOT EXIST IN IPDB', ip)
+				plus = 1
+				
+			else:
+				print('USER NOT LOGGED IN AND IP EXISTS IN DB ', ip)
+				plus = 0
+
+		if len(session) != 0:
+			if ipTable.find_one({'ipN': session['user'] , 'pid':pid} ) == None:
+				ipTable.insert({'ipN': session['user'], 'pid': pid})
+				print('USER IS LOGGED IN AND USER DOES NOT EXIST IN IPDB', ip)
+				plus = 1
+			else:
+				print('USER IS LOGGED IN AND USER EXISTS IN IPDB', ip)
+				plus = 0
+		
+		print('VALUE ADDED TO VIEW COUNT: ', plus)
+		
+		
 		count = result['view_count']
-		questionTable.update_one({'pid':pid}, { "$set": {'view_count': count + 1}} )
+		print('before: ', count) 
+		questionTable.update_one({'pid':pid}, { "$set": {'view_count': count + plus}} )
+		print('after: ', count) 
 
 		username =  result['username']
-		media = result['media']
+		title =  result['title']
+		#media = result['media']
 		body = result['body']
 		timestamp =  result['time']
 		tags = result['tags']
 		view_count = result['view_count']
-		userID = userTable.findOne({'username': username})['_id']
+		userID = userTable.find_one({'username': username})['_id']
 		userID = str(userID) 
 		pid = str(pid)
-		data = 	{	'status': 'OK',
-					'question' :{	
-									'id':pid,
-									'user': { 	
-												'id': userID,
+		data = 	{
+					'status': 'OK',	
+					'question' :{
+									'id': pid,
+									'title':title,
+									'body': body,
+									'tags': tags,
+									'answer_count': 0,
+									'media': None,
+									'accepted_answer_id': None,
+									'user':	{	
 												'username': username,
-												'reputation' : 0,
+												'reputation': 0
 											},
-								},
-					'body': body,
-					'score': -1000000,
-					'view_count' : view_count,
-					'answer_count': -100000000,
-					'timestamp': timestamp,
-					'media': media,
-					'tags': tags,
-					'accepted_answer_id': -1000000000
+									'timestamp': timestamp,
+									'score': 0,
+									"view_count": count + plus
+								}
+
 				}
-		return responseOK({'status':'OK', 'question': data})
+		return responseOK(data)
+
+@bp.route('/questions/<IDD>/answers/add', methods=["POST", "GET"])
+def addAnswer(IDD):
+	if request.method == 'POST':
+		if len(session) == 0:
+			return responseOK({'status': 'error','error': 'not logged in'})
+		pid = int(IDD)
+		body = request.json['body']
+		media = None
+		print('================--===========/questions/<IDD>/answers/add===============--====================')
+		print("ANSWER JSON: ", request.json)
+
+		if ('media' in request.json):
+			media = request.json['media']
+
+		userID = userTable.find_one({'username': session['user']})['_id']
+		userID = str(userID)
+
+		aid = aidTable.find_one({'aid':'aid'})['id']
+		aidTable.update_one({'aid': 'aid'}, {"$set": {"id": aid+1 }} )
+		answer = 	{
+					'pid': pid,
+					'body':body,
+					'media': media,
+					'aid': aid,
+					'user': session['user'],
+					'userID':  userID,
+					'timestamp': (time.time()),
+					'is_accepted': False,
+					'score' : 0
+					}
+		answerTable.insert(answer)
+		return responseOK({'status': 'OK', 'id': str(aid)})
+
+@bp.route('/questions/<IDD>/answers', methods=['GET'])
+def getAnswers(IDD):
+	if request.method == 'GET':
+		print('================--===========/questions/<IDD>/answers===============--====================')
+		pid = int(IDD)
+		allAnswers = answerTable.find({'pid': pid})
+		answerReturn = {"status":"OK", 'answers': []}
+
+		for result in allAnswers:
+			temp =	{
+						'id': str(result['aid']),
+						'user': result['user'],
+						'body': result['body'],
+						'score': result['score'],
+						'is_accepted': result['is_accepted'],
+						'timestamp': result['timestamp'],
+						'media': None
+					}
+
+			answerReturn['answers'].append(temp)
+		
+		print(answerReturn)
+
+		return responseOK(answerReturn)
+		
 
 
 
