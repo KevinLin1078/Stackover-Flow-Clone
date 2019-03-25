@@ -117,18 +117,29 @@ import time
 @bp.route('/questions/add', methods=["POST", "GET"])
 def addQuestion():
 	if(request.method == 'POST'):
-		print("=========================QUESTION/ADD POST===============================")
+		print("=========================QUESTION/ADD POST==============nnnnn=================")
 		if len(session) == 0:
 			print('Wrong SESSION')	
 			print("WRONG: ", request.json)
 			return responseOK({'status': 'ERROR', 'error': 'Wrong user session'})
+		print("JSON ALMOST: ", request.json)
 		print("HERE1")
-		print("JSON: ", request.json)
+		
 		pid = pidTable.find_one({'pid':'pid'})['id']
 		pidTable.update_one({'pid':'pid'}, {"$set": {"id": pid+1 }} )
-		title = request.json['title']
-		body = request.json['body']
-		tags = request.json['tags']
+		title = None
+		body = None
+		tags = None
+		
+		d = request.json
+
+		if ('title' in d) and ('body' in d) and ('tags' in d) :
+			title = request.json['title']
+			body = request.json['body']
+			tags = request.json['tags']
+		else:
+			return responseOK({'status': 'ERROR', 'error': 'Json key doesnt exist'})
+
 		username = session['user']
 		print("HERE2")
 		print("USER ", username)
@@ -137,24 +148,55 @@ def addQuestion():
 						'tags': tags, 
 						'view_count': 0,
 						'time' : (time.time()),
-						'pid' : pid         # id of question
+						'pid' : pid,         # id of question
+						'media': []
 					}
 		
 		pid = str(pid)
 		questionTable.insert(question)
 
-		return responseOK({ 'status': 'OK', 'id':pid	}) 
+		return responseOK({ 'status': 'OK', 'id':pid}) 
 
+@bp.route('/questions/<IDD>', methods=["POST", "GET"])
+def getQuestion(IDD):
+	if request.method == 'GET':
+		print("=========================QUESTION/ID====ID===ID========================")
+		pid = int(IDD)
+		result = questionTable.find_one({'pid':pid})
+		if( result == None):
+			print("NONE FOUND")
+			return responseOK({'status':'error', 'error': 'id doesnt exist'})
+		count = result['view_count']
+		questionTable.update_one({'pid':pid}, { "$set": {'view_count': count + 1}} )
 
-
-
-
-
-
-
-
-
-
+		username =  result['username']
+		media = result['media']
+		body = result['body']
+		timestamp =  result['time']
+		tags = result['tags']
+		view_count = result['view_count']
+		userID = userTable.findOne({'username': username})['_id']
+		userID = str(userID) 
+		pid = str(pid)
+		data = 	{	'status': 'OK',
+					'question' :{	
+									'id':pid,
+									'user': { 	
+												'id': userID,
+												'username': username,
+												'reputation' : 0,
+											},
+								},
+					'body': body,
+					'score': -1000000,
+					'view_count' : view_count,
+					'answer_count': -100000000,
+					'timestamp': timestamp,
+					'media': media,
+					'tags': tags,
+					'accepted_answer_id': -1000000000
+				}
+		return responseOK({'status':'OK', 'question': data})
 
 
 
