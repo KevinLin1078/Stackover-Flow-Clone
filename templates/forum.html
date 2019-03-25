@@ -1,0 +1,65 @@
+
+<!doctype html>
+
+<html>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+		<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="../static/css/forum.css">
+		<title>Login Page</title>
+	</head>
+		
+	<body class='container'>
+        <form>
+            <div align='center'>
+                    <div class="wrap">
+                            <div class="search">
+                            <input type="text" class="searchTerm" placeholder="Ask a question!" id='title' name='title'>
+                            <button type="submit" class="searchButton" id='add'> <i class="fa fa-search"></i>Add</button>
+                            </div>
+                    </div>
+            </div>
+        </form>
+
+
+
+        <script>
+				$(document).ready(function(){
+					$("#add").click( 
+					function(e) {
+						data =  {   
+									'title': $('#title').val(),
+								}
+								alert(data.title )
+						$.ajax({
+							url: '/questions/add',
+							type: 'POST',
+							contentType:"application/json",
+							dataType:"json",
+							data: JSON.stringify(data),
+							success: function (data){
+								alert("User is VERIFIED " + data['status'] )
+								window.location.href='/'
+							},
+							error: function(err){
+								alert(err['status'])
+							}
+						})
+					})			
+				});
+			</script>
+
+
+
+
+
+
+
+
+
+	</body>	
+</html> 
+
+

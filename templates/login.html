@@ -1,22 +1,48 @@
+
 <!doctype html>
 
 <html>
 	<head>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-		<script type="text/javascript" src='/static/jQuery.js'></script>
-		<link rel="stylesheet" href="../static/index.css">
-
-		<title>Tic Tac Toe Sign In</title>
+		<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+		<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="../static/css/index.css">
+		<title>Login Page</title>
 	</head>
 		
-	<body>
-		<form  method='post' action="{{url_for('login'  )}}"> 
+	<body class='container'>
+		<div align='center'>
+			<button onclick="window.location.href='/login'" style='background-color: red' /> Login</button>
+			<button onclick="window.location.href='/adduser'"> Sign Up</button>
+			<button onclick="window.location.href='/verify'"> Verify</button>
+		</div>
+		<form  method='post' action="/login"> 
 			
-			Username: <input type="text" name="username" /><br><br>
-			Password: <input type='password' name="password"/><br><br>
-			<button id='indexSubmit' type='submit' > Submit </button> 
+			<div class="container login-container">
+				<div class="row">
+					<div class="col-md-6 login-form-1">
+						<h3 style='color: red'>Login </h3>
+						<form>
+							<div class="form-group">
+								<input type="text" class="form-control" placeholder="Username" value="" name='username'/>
+							</div>
+							<div class="form-group">
+								<input type="password" class="form-control" placeholder="Password" value="" name='password'/>
+							</div>
+							<div class="form-group">
+								<input type="submit" class="btnSubmit" value="Login" />
+							</div>
+							<!-- <div class="form-group">
+								<a href="#" class="ForgetPwd">Forget Password?</a>
+							</div> -->
+						</form>
+					</div>
+				</div>
+			</div>
 		
 		</form>
 	</body>	
+</html> 
 
-</html>
+

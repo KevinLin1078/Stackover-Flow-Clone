@@ -1,0 +1,75 @@
+
+<!doctype html>
+
+<html>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+		<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="../static/css/index.css">
+		<title>Verify</title>
+    </head>
+   
+    
+		
+	<body class='container'>
+			<div align='center'>
+					<button onclick="window.location.href='/login'"/> Login</button>
+					<button onclick="window.location.href='/adduser'"> Sign Up</button>
+					<button onclick="window.location.href='/verify'" style='background-color: red'> Verify</button>
+				</div>
+		<form> 
+			<div class="container login-container">
+				<div class="row">
+					<div class="col-md-6 login-form-1">
+						<h3 style='color: red'>Verify User </h3>
+						<form >
+							<div class="form-group">
+								<input type="text" class="form-control" placeholder="Email" value="" name='email' id='email'/>
+							</div>
+							<div class="form-group">
+								<input type="text" class="form-control" placeholder="Key" value="" name='key' id='key'/>
+							</div>
+							<div class="form-group">
+								<input type="submit" class="btnSubmit" value="Verify" id='verify'/>
+							</div>
+							<!-- <div class="form-group">
+								<a href="#" class="ForgetPwd">Forget Password?</a>
+							</div> -->
+						</form>
+					</div>
+				</div>
+			</div>
+		
+        </form>
+        <script>
+				$(document).ready(function(){
+					$("#verify").click( 
+					function(e) {
+						data =  {   
+									'email': $('#email').val(),
+									'key': $('#key').val()
+								}
+								alert(data.email + " " +data.key)
+						$.ajax({
+							url: '/verify',
+							type: 'POST',
+							contentType:"application/json",
+							dataType:"json",
+							data: JSON.stringify(data),
+							success: function (data){
+								alert("User is VERIFIED " + data['status'] )
+								window.location.href='/login'
+							},
+							error: function(err){
+								alert(err['status'])
+							}
+						})
+					})			
+				});
+			</script>
+	</body>	
+</html> 
+
+
