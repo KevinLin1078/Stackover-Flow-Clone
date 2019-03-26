@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g
+from flask import Blueprint, render_template, abort, jsonify, Flask, request, url_for, json, redirect, Response, session, g
 from werkzeug.security import check_password_hash, generate_password_hash
 import tictac, datetime
 from flask_cors import CORS
@@ -106,12 +106,8 @@ def logout():
 		print("=========================LOGOUT POST===============================")
 		session.clear()
 		return responseOK({'status': 'OK'})
-# db = client.stack
-# userTable = db['user'] 
-# answerTable = db['answer']
-# aidTable = db['answer_id']
-# questionTable = db['question']
-# pidTable = db['pid']
+	if request.method == 'GET':
+		return render_template('login.html')
 import time
 
 @bp.route('/questions/add', methods=["POST", "GET"])
@@ -147,7 +143,7 @@ def addQuestion():
 						'title': title, 
 						'tags': tags, 
 						'view_count': 0,
-						'time' : (time.time()),
+						'time' : time.time(),
 						'pid' : pid,         # id of question
 						'media': None,
 						'body': body
@@ -178,7 +174,6 @@ def getQuestion(IDD):
 				ipTable.insert({'ip':ip, 'pid': pid})
 				print('USER NOT LOGGED IN AND IP DOES NOT EXIST IN IPDB', ip)
 				plus = 1
-				
 			else:
 				print('USER NOT LOGGED IN AND IP EXISTS IN DB ', ip)
 				plus = 0
@@ -290,9 +285,67 @@ def getAnswers(IDD):
 
 		return responseOK(answerReturn)
 		
+@bp.route('/search', methods=['GET', 'POST'])
+def search():
+	# if request.method == 'GET':
+	# 	return render_template('forum.html')
+	if request.method == 'POST':
+		print('--------------------------------Search-----------------------------')
+		timestamp = time.time()
+		if 'timestamp' not in request.json:
+			print("timestamp doesntt exist")
+			timestamp = time.time()
+		else:
+			timestamp = request.json['timestamp']
+		
+		limit = 25
+		if 'limit' not in request.json:
+			print("Limit doesntt exist")
+			limit = 25
+		else:
+			limit = int( request.json['limit'])			
+		
+		
+		print("SEARCH JSON ", request.json)
+		if 'limit' in request.json:
+			limit = request.json['limit']
+		
+		questFilter = []
+		allQuestion = questionTable.find();
+		
+		
+		for q in allQuestion:
+			if q['time'] <= timestamp:
+				questFilter.append(q)
+		print('THERE ARE ', len(questFilter))
+		questFilter.sort(key=lambda x: x['time'], reverse=True)
 
-
-
+		ret = []  
+		count = 0;
+		for q in questFilter:
+			if(count == limit ):
+				break;
+			temp = {
+						'id': str(q['pid']),
+						'title':q['title'],
+						'body': q['body'],
+						'tags': q['tags'],
+						'answer_count': 0,
+						'media': None,
+						'accepted_answer_id': None,
+						'user':	{	
+									'username': q['username'],
+									'reputation': 0
+								},
+						'timestamp': q['time'],
+						'score': 0,
+						"view_count": q['view_count']
+					}
+			count = count +1
+			ret.append(temp)
+			
+		return jsonify({'status':'OK','questions': ret,'error':"" })
+		
 def responseOK(stat):
 	data = stat
 	jsonData = json.dumps(data)
