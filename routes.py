@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, jsonify, Flask, request, url_for, json, redirect, Response, session, g
+from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g
 from werkzeug.security import check_password_hash, generate_password_hash
 import tictac, datetime
 from flask_cors import CORS
@@ -6,7 +6,7 @@ from flask_mail import Mail
 from flask_mail import Message
 import pymongo 
 from pymongo import MongoClient
-
+import time
 app = Flask(__name__)
 client = MongoClient()
 
@@ -23,7 +23,6 @@ mail = Mail(app)
 bp = Blueprint('routes', __name__, template_folder='templates')
 CORS(bp)
 
-
 db = client.stack
 userTable = db['user'] 
 answerTable = db['answer']
@@ -32,7 +31,7 @@ questionTable = db['question']
 pidTable = db['pid']
 ipTable = db['ip']
 
-@bp.route('/', methods=['GET','POST'])
+@bp.route('/', methods=['GET'])
 def index():
 	return redirect(url_for('routes.login'))
 
@@ -54,7 +53,8 @@ def adduser():
 		user = 	{ 	'username': name, 
 					'email': email, 
 					'password': password, 
-					'verified': 'no'
+					'verified': 'no',
+					'reputation': 0
 				}
 
 		userTable.insert(user)
@@ -106,9 +106,34 @@ def logout():
 		print("=========================LOGOUT POST===============================")
 		session.clear()
 		return responseOK({'status': 'OK'})
+
+
+@bp.route('/user/<getName>', methods=["GET"])
+def getUser(getName):
 	if request.method == 'GET':
-		return render_template('login.html')
-import time
+		username = str(getName)
+		result = userTable.find_one({'username':username})
+
+		user ={	'email': result['email'],
+					'reputation': result['reputation']
+				}
+		return responseOK({ 'status': 'OK', 'user': user}) 
+
+
+@bp.route('/user/<getName>/questions', methods=["GET"])
+def getUserQuestions(getName):
+	if request.method == 'GET':
+		print("=========================USER/<GETNAME> QUESTION==============GET=================")
+		username = str(getName)
+		query = 	{ 'user': {'username': username} }
+		allQuestions = question.find(query)
+		questionReturn = {'status':'OK', 'questions': [] }
+
+		for result in allQuestions:
+			temp = str(result['pid'])
+			questionReturn['questions'].append(temp)
+		return responseOK(questionReturn)
+
 
 @bp.route('/questions/add', methods=["POST", "GET"])
 def addQuestion():
@@ -137,28 +162,32 @@ def addQuestion():
 			return responseOK({'status': 'ERROR', 'error': 'Json key doesnt exist'})
 
 		username = session['user']
-		print("HERE2")
 		print("USER ", username)
-		question =	{	'username': username, 
-						'title': title, 
-						'tags': tags, 
-						'view_count': 0,
-						'time' : time.time(),
-						'pid' : pid,         # id of question
-						'media': None,
-						'body': body
-					}
-		
+		#userResult = userTable.find_one({'username', username})
+		question =	{
+									'pid' : pid,         # id of question
+									'user': {	'username': str(username),
+														'reputation': 0
+													},
+									'title': title, 
+									'body': body,
+									'score': 0,
+									'view_count': 0,
+									'answer_count': 0,
+									'timestamp': (time.time()),
+									'media': None,
+									'tags': tags,
+									'accepted_answer_id': None
+								}
 		pid = str(pid)
 		questionTable.insert(question)
-
 		return responseOK({ 'status': 'OK', 'id':pid}) 
 
-@bp.route('/questions/<IDD>', methods=["POST", "GET"])
+@bp.route('/questions/<IDD>', methods=[ "GET", 'DELETE'])
 def getQuestion(IDD):
+	pid = int(IDD)
 	if request.method == 'GET':
-		print("=========================QUESTION/ID====ID===ID========================")
-		pid = int(IDD)
+		print("=========================QUESTION/ID====GET===============================")
 		print("ID IS: ", pid)
 		result = questionTable.find_one({'pid':pid})
 		if( result == None):
@@ -176,7 +205,6 @@ def getQuestion(IDD):
 				plus = 1
 			else:
 				print('USER NOT LOGGED IN AND IP EXISTS IN DB ', ip)
-				plus = 0
 
 		if len(session) != 0:
 			if ipTable.find_one({'ipN': session['user'] , 'pid':pid} ) == None:
@@ -185,47 +213,48 @@ def getQuestion(IDD):
 				plus = 1
 			else:
 				print('USER IS LOGGED IN AND USER EXISTS IN IPDB', ip)
-				plus = 0
 		
 		print('VALUE ADDED TO VIEW COUNT: ', plus)
 		
-		
 		count = result['view_count']
-		print('before: ', count) 
 		questionTable.update_one({'pid':pid}, { "$set": {'view_count': count + plus}} )
-		print('after: ', count) 
+		result = questionTable.find_one({'pid':pid})
 
-		username =  result['username']
-		title =  result['title']
-		#media = result['media']
-		body = result['body']
-		timestamp =  result['time']
-		tags = result['tags']
-		view_count = result['view_count']
-		userID = userTable.find_one({'username': username})['_id']
-		userID = str(userID) 
-		pid = str(pid)
-		data = 	{
-					'status': 'OK',	
-					'question' :{
-									'id': pid,
-									'title':title,
-									'body': body,
-									'tags': tags,
-									'answer_count': 0,
-									'media': None,
-									'accepted_answer_id': None,
-									'user':	{	
-												'username': username,
-												'reputation': 0
-											},
-									'timestamp': timestamp,
-									'score': 0,
-									"view_count": count + plus
-								}
+		
+		question =	{
+							'id' : str(result['pid']),         # id of question
+							'user': result['user'],
+							'title': result['title'], 
+							'body': result['body'],
+							'score': result['score'],
+							'view_count': result['view_count'],
+							'answer_count': result['answer_count'],
+							'timestamp': result['timestamp'],
+							'media': result['media'],
+							'tags': result['tags'],
+							'accepted_answer_id': None
+						}
+		return responseOK({'status':'OK', 'question': question})
+	elif request.method == 'DELETE':
+		print("=========================QUESTION/ID====DELETE===============================")
+		if len(session) == 0:
+			print("CANT DELETE USER NOT LOGGED IN")
+			return responseOK({'status':'error'})
+		else:
+			result = questionTable.find_one({'pid':pid})
+			if( result == None):
+				print('FAILED DELTED, invalid QUESTIONS ID')
+				return responseNO({'status':'error'})
 
-				}
-		return responseOK(data)
+			username = result['user']['username']
+			if session['user'] != username:
+				print('FAILED DELTED, user is not original')
+				return responseNO({'status':'error'})
+			else:
+				print('SUCCESSFULLY DELTED, user is original')
+				questionTable.delete_one({'pid': pid})
+				return responseOK({'status': 'OK'})
+				
 
 @bp.route('/questions/<IDD>/answers/add', methods=["POST", "GET"])
 def addAnswer(IDD):
@@ -280,74 +309,21 @@ def getAnswers(IDD):
 					}
 
 			answerReturn['answers'].append(temp)
-		
 		print(answerReturn)
 
 		return responseOK(answerReturn)
 		
-@bp.route('/search', methods=['GET', 'POST'])
-def search():
-	# if request.method == 'GET':
-	# 	return render_template('forum.html')
-	if request.method == 'POST':
-		print('--------------------------------Search-----------------------------')
-		timestamp = time.time()
-		if 'timestamp' not in request.json:
-			print("timestamp doesntt exist")
-			timestamp = time.time()
-		else:
-			timestamp = request.json['timestamp']
-		
-		limit = 25
-		if 'limit' not in request.json:
-			print("Limit doesntt exist")
-			limit = 25
-		else:
-			limit = int( request.json['limit'])			
-		
-		
-		print("SEARCH JSON ", request.json)
-		if 'limit' in request.json:
-			limit = request.json['limit']
-		
-		questFilter = []
-		allQuestion = questionTable.find();
-		
-		
-		for q in allQuestion:
-			if q['time'] <= timestamp:
-				questFilter.append(q)
-		print('THERE ARE ', len(questFilter))
-		questFilter.sort(key=lambda x: x['time'], reverse=True)
 
-		ret = []  
-		count = 0;
-		for q in questFilter:
-			if(count == limit ):
-				break;
-			temp = {
-						'id': str(q['pid']),
-						'title':q['title'],
-						'body': q['body'],
-						'tags': q['tags'],
-						'answer_count': 0,
-						'media': None,
-						'accepted_answer_id': None,
-						'user':	{	
-									'username': q['username'],
-									'reputation': 0
-								},
-						'timestamp': q['time'],
-						'score': 0,
-						"view_count": q['view_count']
-					}
-			count = count +1
-			ret.append(temp)
-			
-		return jsonify({'status':'OK','questions': ret,'error':"" })
-		
+
+
 def responseOK(stat):
 	data = stat
 	jsonData = json.dumps(data)
 	respond = Response(jsonData,status=200, mimetype='application/json')
+	return respond
+
+def responseNO(stat):
+	data = stat
+	jsonData = json.dumps(data)
+	respond = Response(jsonData,status=204, mimetype='application/json')
 	return respond

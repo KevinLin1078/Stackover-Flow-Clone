@@ -23,8 +23,8 @@ userTable.drop()
 answerTable.drop()
 questionTable.drop()
 ipTable.drop()
-
-
+pidTable.update_one({'pid':'pid'}, {"$set": {"id": 1 }} )
+print('UPDATED DATA')
 # limit = 25
 # questFilter = []
 # allQuestion = questionTable.find();

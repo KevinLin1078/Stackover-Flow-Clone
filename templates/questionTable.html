@@ -8,9 +8,11 @@
     </head>  
     <body>
         <div class="container">
-            <button onclick="window.location.href='/login'"/> Login</button>
-			<button onclick="window.location.href='/adduser'"> Sign Up</button>
-            <button onclick="window.location.href='/verify'"> Verify</button>
+            {% if login == 0  %}<button onclick="window.location.href='/login'"/> Login</button>{% endif %}
+			{% if login == 0  %}<button onclick="window.location.href='/adduser'"> Sign Up</button>{% endif %}
+            {% if login == 0  %}<button onclick="window.location.href='/verify'"> Verify</button>{% endif %}
+            {% if login == 1  %} <button id='logout'> Logout</button>{% endif %}
+            
             <h1>Stack All The Flow </h1>
                 <div class="row">
                     <div class="col-lg-12">
@@ -29,9 +31,10 @@
                             <table class="table table-hover" id="dev-table">
                                 <thead>
                                     <tr>
-                                        <th>#</th>
-                                        <th>Questions</th>
-                                        <th>User</th>
+                                        <th>    <a id='sortId'>#</a>            </th>
+                                        <th>    <a id='sortTitle'>Questions</a>    </th>
+                                        <th>    <a id='sortUser'>User</a>         </th>
+                                        <th>    <a id='sortDate'>Date</a>         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -40,6 +43,7 @@
                                         <th>{{item['pid']}}</th>
                                         <th>{{item['title']}}</th>
                                         <th>{{item['username']}}</th>
+                                        <th>{{item['time']}}</th>
                                     </tr> 
                                     {% endfor %}
                                     
@@ -51,5 +55,83 @@
                     
                 </div>
             </div>
-        </body>
+        
+
+        <script>
+			$(document).ready(function(){
+                $("#logout").click( 
+				function(e) {
+					$.ajax({
+						url: '/logout',
+						type: 'POST',
+						contentType:"application/json",
+						dataType:"json",
+						data: JSON.stringify({}),
+						success: function (data){
+							
+							window.location.href='/login'
+						},
+						error: function(err){
+							alert("ERROR OCCURED WHILE ADDING USER " + err)
+						}
+					})
+				})
+                
+                $("#sortUser").click( 
+				function(e) {
+					$.ajax({
+						url: '/search',
+						type: 'GET',
+						contentType:"application/json",
+						dataType:"json",
+						data: JSON.stringify({'user': 'user'}),
+						success: function (data){
+						},
+						error: function(err){
+							alert("ERROR OCCURED WHILE ADDING USER " + err)
+						}
+					})
+				})
+
+                $("#sortDate").click( 
+				function(e) {
+					$.ajax({
+						url: '/search',
+						type: 'GET',
+						contentType:"application/json",
+						dataType:"json",
+						data: JSON.stringify({'date': 'user'}),
+						success: function (data){
+						},
+						error: function(err){
+							alert("ERROR OCCURED WHILE ADDING USER " + err)
+						}
+					})
+				})
+        
+                $("#sortTitle").click( 
+				function(e) {
+					$.ajax({
+						url: '/search',
+						type: 'GET',
+						contentType:"application/json",
+						dataType:"json",
+						data: JSON.stringify({'title': 'user'}),
+						success: function (data){
+						},
+						error: function(err){
+							alert("ERROR OCCURED WHILE ADDING USER " + err)
+						}
+					})
+				})        
+        
+        })
+				
+
+
+                ////////////////////////////////////////////////
+			
+		</script>
+    </body>
+
     </html>

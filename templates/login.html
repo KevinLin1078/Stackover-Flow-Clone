@@ -25,13 +25,13 @@
 						<h3 style='color: red'>Login </h3>
 						<form>
 							<div class="form-group">
-								<input type="text" class="form-control" placeholder="Username" value="" name='username'/>
+								<input type="text" class="form-control" placeholder="Username" value="" name='username' id ='username'/>
 							</div>
 							<div class="form-group">
-								<input type="password" class="form-control" placeholder="Password" value="" name='password'/>
+								<input type="password" class="form-control" placeholder="Password" value="" id='password' name='password'/>
 							</div>
 							<div class="form-group">
-								<input type="submit" class="btnSubmit" value="Login" />
+								<input type="submit" class="btnSubmit" value="Login" id='login'/>
 							</div>
 							<!-- <div class="form-group">
 								<a href="#" class="ForgetPwd">Forget Password?</a>
@@ -42,6 +42,34 @@
 			</div>
 		
 		</form>
+
+		<script>
+			$(document).ready(function(){
+				$("#login").click( 
+				function(e) {
+					data =  {   'username': $('#username').val(),
+								'password': $("#password").val()
+							}
+					$.ajax({
+						url: '/login',
+						type: 'POST',
+						contentType:"application/json",
+						dataType:"json",
+						data: JSON.stringify(data),
+						success: function (data){
+							
+							window.location.href='/search'
+						},
+						error: function(err){
+							alert("ERROR OCCURED WHILE ADDING USER " + err)
+						}
+					})
+				})			
+			});
+		</script>
+
+
+
 	</body>	
 </html> 
 
