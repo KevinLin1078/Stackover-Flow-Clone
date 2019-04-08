@@ -13,18 +13,49 @@ aidTable = db['answer_id']
 questionTable = db['question']
 pidTable = db['pid']
 ipTable = db['ip']
+questionIndex = db['questionIndex']
+answerIndex = db['answerIndex']
 
-
-
-#pidTable.insert({'pid':'pid', 'id': 1})
-#aidTable.insert({'aid':'aid', 'id': 1})
 
 userTable.drop()
 answerTable.drop()
+answerTable.drop()
 questionTable.drop()
+pidTable.drop()
 ipTable.drop()
-pidTable.update_one({'pid':'pid'}, {"$set": {"id": 1 }} )
+questionIndex.drop() 
+answerIndex.drop()
+
+userTable = db['user'] 
+answerTable = db['answer']
+questionTable = db['question']
+ipTable = db['ip']
+questionIndex = db['questionIndex']
+answerIndex = db['answerIndex']
+aidTable = db['answer_id']
+pidTable = db['pid']
+
+userTable.insert({})
+answerTable.insert({})
+questionTable.insert({})
+ipTable.insert({})
+questionIndex.insert({})
+answerIndex.insert({})
+
+pidTable.insert({'pid':'pid', 'id': 1})
+aidTable.insert({'aid':'aid', 'id': 1})
+
+
+
+
+# userTable.drop()
+# answerTable.drop()
+# questionTable.drop()
+# ipTable.drop()
+# pidTable.update_one({'pid':'pid'}, {"$set": {"id": 1 }} )
 print('UPDATED DATA')
+
+
 # limit = 25
 # questFilter = []
 # allQuestion = questionTable.find();

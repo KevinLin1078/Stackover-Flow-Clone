@@ -30,6 +30,8 @@ aidTable = db['answer_id']
 questionTable = db['question']
 pidTable = db['pid']
 ipTable = db['ip']
+questionIndex = db['questionIndex']
+answerIndex = db['answerIndex']
 
 @bp.route('/', methods=['GET'])
 def index():
@@ -127,12 +129,19 @@ def getUserQuestions(getName):
 		username = str(getName)
 		query = 	{ 'user': {'username': username} }
 		allQuestions = question.find(query)
+
 		questionReturn = {'status':'OK', 'questions': [] }
 
 		for result in allQuestions:
 			temp = str(result['pid'])
 			questionReturn['questions'].append(temp)
+		
 		return responseOK(questionReturn)
+
+# @bp.route('/user/<getName>/answers', methods=["GET"])
+# def getUserAnswers(getName):
+# 	if request.method == 'GET':
+# 		pass
 
 
 @bp.route('/questions/add', methods=["POST", "GET"])
@@ -180,6 +189,7 @@ def addQuestion():
 									'accepted_answer_id': None
 								}
 		pid = str(pid)
+		questionStore(title, body, pid)
 		questionTable.insert(question)
 		return responseOK({ 'status': 'OK', 'id':pid}) 
 
@@ -253,6 +263,7 @@ def getQuestion(IDD):
 			else:
 				print('SUCCESSFULLY DELTED, user is original')
 				questionTable.delete_one({'pid': pid})
+				answerTable.delete_one({'pid': pid})
 				return responseOK({'status': 'OK'})
 				
 
@@ -313,7 +324,66 @@ def getAnswers(IDD):
 
 		return responseOK(answerReturn)
 		
+@bp.route('/search', methods=['GET', 'POST'])
+def search():
+	# if request.method == 'GET':
+	# 	return render_template('forum.html')
+	if request.method == 'POST':
+		print('--------------------------------Search-----------------------------')
+		timestamp = time.time()
+		if 'timestamp' not in request.json:
+			print("timestamp doesntt exist")
+			timestamp = time.time()
+		else:
+			timestamp = request.json['timestamp']
+		
+		limit = 25
+		if 'limit' not in request.json:
+			print("Limit doesntt exist")
+			limit = 25
+		else:
+			limit = int( request.json['limit'])			
+		
+		if 'limit' in request.json:
+			limit = request.json['limit']
+		
+		q = ''
+		if 'q' in request.json:
+			q = request.json['q']
 
+		if len(q) == 0:
+			questFilter = []
+			allQuestion = questionTable.find();
+			for q in allQuestion:
+				if q['time'] <= timestamp:
+					questFilter.append(q)
+			print('THERE ARE ', len(questFilter))
+			questFilter.sort(key=lambda x: x['time'], reverse=True)
+
+			ret = []  
+			count = 0;
+			for q in questFilter:
+				if(count == limit ):
+					break;
+				temp = {
+							'id': str(q['pid']),
+							'title':q['title'],
+							'body': q['body'],
+							'tags': q['tags'],
+							'answer_count': 0,
+							'media': None,
+							'accepted_answer_id': None,
+							'user':q['user'],
+							'timestamp': q['time'],
+							'score': 0,
+							"view_count": q['view_count']
+						}
+				count = count +1
+				ret.append(temp)
+				
+			return jsonify({'status':'OK','questions': ret,'error':"" })
+		else:
+			pass;
 
 
 def responseOK(stat):
@@ -327,3 +397,38 @@ def responseNO(stat):
 	jsonData = json.dumps(data)
 	respond = Response(jsonData,status=204, mimetype='application/json')
 	return respond
+
+
+# userTable = db['user'] 
+# answerTable = db['answer']
+# aidTable = db['answer_id']
+# questionTable = db['question']
+# pidTable = db['pid']
+# ipTable = db['ip']
+# questionIndex = db['questionIndex']
+# answerIndex = db['answerIndex']
+
+def questionStore(title, body, pid):
+   parseAlgo(title, pid)
+   parseAlgo(body, pid)
+
+def parseAlgo(body, pid):
+   body = str(body).split()
+   if len(body) != 0:
+      for word in body:
+         result = questionIndex.find_one({word: word})
+         if result == None:
+            questionIndex.insert({ word: word, 'arr': [[pid,1]]  })
+         else:
+            arr = result['arr']
+            found = False
+            for i in range(0, len(arr)):
+               if arr[i][0] == pid:
+                  arr[i][1]+=1
+                  found = True
+                  break
+            if found == True:      
+               questionIndex.update_one({word:word}, {'$set': {'arr': arr  }}  )
+            else:
+               questionIndex.update_one({word:word}, {'$push': {'arr': [pid, 1]  }}  )
+
