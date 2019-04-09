@@ -50,7 +50,13 @@
                                         <th>{{item['title']}}</th>
                                         <th>{{item['user']['username']}}</th>
                                         <th>{{item['timestamp']}}</th>
+                                        
                                     </tr> 
+                                    <tr>
+                                        <div style='border:1px solid red;'></div>
+                                           {{item['body']}}
+                                        </div>
+                                    </tr>
                                     {% endfor %}
                                     
                                     

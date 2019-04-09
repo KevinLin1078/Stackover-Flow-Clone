@@ -151,7 +151,7 @@ def addQuestion():
 			print("WRONG: ", request.json)
 			return responseOK({'status': 'ERROR', 'error': 'Wrong user session'})
 		print("JSON ALMOST: ", request.json)
-		print("HERE1")
+		
 		
 		pid = pidTable.find_one({'pid':'pid'})['id']
 		pidTable.update_one({'pid':'pid'}, {"$set": {"id": pid+1 }} )
@@ -160,17 +160,14 @@ def addQuestion():
 		tags = None
 		
 		d = request.json
-
 		if ('title' in d) and ('body' in d) and ('tags' in d) :
-			title = request.json['title']
-			body = request.json['body']
+			title = request.json['title'].encode("utf-8")
+			body = request.json['body'].encode("utf-8")
 			tags = request.json['tags']
 		else:
 			return responseOK({'status': 'ERROR', 'error': 'Json key doesnt exist'})
 
 		username = session['user']
-		print("USER ", username)
-		#userResult = userTable.find_one({'username', username})
 		question =	{
 									'pid' : pid,         # id of question
 									'user': {	'username': str(username),
@@ -188,7 +185,7 @@ def addQuestion():
 								}
 		pid = str(pid)
 		questionStore(title, body, pid)
-		questionTable.insert(question)
+		questionTable.insert(question, check_keys=False)
 		return responseOK({ 'status': 'OK', 'id':pid}) 
 
 @bp.route('/questions/<IDD>', methods=[ "GET", 'DELETE'])
@@ -271,8 +268,10 @@ def getQuestion(IDD):
 				return responseNO({'status':'error'})
 			else:
 				print('SUCCESSFULLY DELTED, user is original')
+				pid = int(pid)
 				questionTable.delete_one({'pid': pid})
 				answerTable.delete_one({'pid': pid})
+				ipTable.delete_many({'pid': pid})
 				return responseOK({'status': 'OK'})
 				
 
@@ -407,18 +406,13 @@ def search():
 
 			ret = []  
 			count = 0;
-			ranking = rank(query)
-
-
-			'''
-			qq = str(query).split()
-			length = len(qq)
+			ranking = rank(query.lower())
 
 			for item in ranking:
 				for q in questFilter:
 					if(count == limit ):
 						break;
-					if str(item[0]) == str(q['pid']) and item[1] == length:
+					if str(item[0]) == str(q['pid']):
 						temp = {
 								'id': str(q['pid']),
 								'title':q['title'],
@@ -434,13 +428,9 @@ def search():
 							}
 						count = count +1
 						ret.append(temp)
-			'''
+
 			ret.sort(key=lambda x: x['timestamp'], reverse=True)
 			return responseOK({'status':'OK','questions': ret,'error':"" })
-
-			# for item in ret:
-			# 	print('title: ', item['title'])
-			# 	print('body: ' ,item['body'])
 
 
 def responseOK(stat):
@@ -465,7 +455,7 @@ def parseAlgo(body, pid):
       for word in body:
          result = questionIndex.find_one({word: word})
          if result == None:
-            questionIndex.insert({ word: word, 'arr': [[pid,1]]  })
+            questionIndex.insert({ word: word, 'arr': [[pid,1]]  }, check_keys=False)
          else:
             arr = result['arr']
             found = False
