@@ -111,10 +111,14 @@ def logout():
 @bp.route('/user/<getName>', methods=["GET"])
 def getUser(getName):
 	if request.method == 'GET':
+		print('=========================/user/<getName>===================================')
+		print("name ", getName)
 		username = str(getName)
 		result = userTable.find_one({'username':username})
-
-		user ={	'email': result['email'],
+		if result == None:
+			return responseOK({'status': 'error'})
+		user ={	
+					'email': result['email'],
 					'reputation': result['reputation']
 				}
 		return responseOK({ 'status': 'OK', 'user': user}) 
@@ -125,21 +129,21 @@ def getUserQuestions(getName):
 	if request.method == 'GET':
 		print("=========================USER/<GETNAME> QUESTION==============GET=================")
 		username = str(getName)
-		query = 	{ 'user': {'username': username} }
-		allQuestions = question.find(query)
-
+		print(username)
+		result = userTable.find_one({'username':username})
+		if result == None:
+			return responseOK({'status': 'error'})
+		
+		allQuestions = questionTable.find({ 'username': username } )
+		
 		questionReturn = {'status':'OK', 'questions': [] }
 
 		for result in allQuestions:
-			temp = str(result['pid'])
-			questionReturn['questions'].append(temp)
+			questionReturn['questions'].append(str(result['pid']))
 		
 		return responseOK(questionReturn)
 
-# @bp.route('/user/<getName>/answers', methods=["GET"])
-# def getUserAnswers(getName):
-# 	if request.method == 'GET':
-# 		pass
+
 
 
 @bp.route('/questions/add', methods=["POST", "GET"])
@@ -181,7 +185,8 @@ def addQuestion():
 									'timestamp': int(time.time()),
 									'media': None,
 									'tags': tags,
-									'accepted_answer_id': None
+									'accepted_answer_id': None,
+									'username': str(username)
 								}
 		pid = str(pid)
 		questionTable.insert(question)
@@ -330,11 +335,20 @@ def getAnswers(IDD):
 		print(answerReturn)
 
 		return responseOK(answerReturn)
-		
-@bp.route('/search', methods=['GET', 'POST'])
+
+@app.template_filter('ctime')
+def timectime(s):
+	return time.ctime(s) # datetime.datetime.fromtimestamp(s)
+	
+@bp.route('/search', methods=['GET', 'POST','PUT'])
 def search():
 	if request.method == 'GET':
-		return render_template('questionTable.html', questionTable=questionTable.find())
+		result = questionTable.find()
+		return render_template('questionTable.html', questionTable=result)
+	if request.method == 'PUT':
+		result = questionTable.find()
+		return render_template('questionTable.html', questionTable=result)
+
 	if request.method == 'POST':
 		print('--------------------------------Search-----------------------------')
 		timestamp = time.time()
@@ -362,91 +376,11 @@ def search():
 		print("limit: ", limit)
 		
 		if len(query) == 0:
-			print("NO QUERY")
-			questFilter = []
-			allQuestion = questionTable.find();
-			for q in allQuestion:
-				if q['timestamp'] <= timestamp:
-					questFilter.append(q)
-			print('THERE ARE ', len(questFilter))
-			questFilter.sort(key=lambda x: x['timestamp'], reverse=True)
-
-			ret = []  
-			count = 0;
-			for q in questFilter:
-				if(count == limit ):
-					break;
-				temp = {
-							'id': str(q['pid']),
-							'title':q['title'],
-							'body': q['body'],
-							'tags': q['tags'],
-							'answer_count': 0,
-							'media': None,
-							'accepted_answer_id': None,
-							'user':q['user'],
-							'timestamp': q['timestamp'],
-							'score': 0,
-							"view_count": q['view_count']
-						}
-				count = count +1
-				ret.append(temp)
-				
-			return responseOK({'status':'OK','questions': ret,'error':"" })
+			answer = filter_without_query(timestamp, limit)
+			return responseOK(answer)
 		else:
-			print("WITH QUERY")
-			search_query = {}
-			search_query['$or'] = []
-
-			query_title = {}
-			query_title['$or'] = []
-
-			query_body = {}
-			query_body['$or'] =[]
-			query = query.lower()
-			query = query.split(' ')
-
-			for each in query:
-				term = {}
-				term['$or'] = []
-				term['$or'].append({'title':{'$regex': ' ' + each}})
-				term['$or'].append({'title':{'$regex': each + ' '}})
-				query_title['$or'].append(term)
-
-				term = {}
-				term['$or'] = []
-				term['$or'].append({'body':{'$regex': ' ' + each}})
-				term['$or'].append({'body':{'$regex': each + ' '}})
-				query_body['$or'].append(term)
-
-			search_query['$or'].append(query_title)
-			search_query['$or'].append(query_body)
-
-			results = questionTable.find(search_query)
-
-			ret =[]
-			count = 0
-			for q in results:
-				if(count == limit ):
-					break;
-				if q['timestamp'] <= timestamp:
-					temp = {
-									'id': str(q['pid']),
-									'title':q['title'],
-									'body': q['body'],
-									'tags': q['tags'],
-									'answer_count': 0,
-									'media': None,
-									'accepted_answer_id': None,
-									'user':q['user'],
-									'timestamp': q['timestamp'],
-									'score': 0,
-									"view_count": q['view_count']
-								}
-					count = count + 1
-					ret.append(temp)			
-			ret.sort(key=lambda x: x['timestamp'], reverse=True)
-			return responseOK({'status':'OK','questions': ret,'error':"" })
+			answer = filter_with_query(query, timestamp, limit)
+			return responseOK(answer)
 
 
 def responseOK(stat):
@@ -461,49 +395,90 @@ def responseNO(stat):
 	respond = Response(jsonData,status=204, mimetype='application/json')
 	return respond
 
-def questionStore(title, body, pid):
-   parseAlgo(title, pid)
-   parseAlgo(body, pid)
+def filter_with_query(query, timestamp, limit):
+	print("WITH QUERY")
+	search_query = {}
+	search_query['$or'] = []
 
-def parseAlgo(body, pid):
-   body = str(body).split()
-   if len(body) != 0:
-      for word in body:
-         result = questionIndex.find_one({word: word})
-         if result == None:
-            questionIndex.insert({ word: word, 'arr': [[pid,1]]  })
-         else:
-            arr = result['arr']
-            found = False
-            for i in range(0, len(arr)):
-               if arr[i][0] == pid:
-                  arr[i][1]+=1
-                  found = True
-                  break
-            if found == True:      
-               questionIndex.update_one({word:word}, {'$set': {'arr': arr  }}  )
-            else:
-               questionIndex.update_one({word:word}, {'$push': {'arr': [pid, 1]  }}  )
+	query_title = {}
+	query_title['$or'] = []
 
+	query_body = {}
+	query_body['$or'] =[]
+	query = query.lower()
+	query = query.split(' ')
 
+	for each in query:
+		term = {}
+		term['$or'] = []
+		term['$or'].append({'title':{'$regex': ' ' + each}})
+		term['$or'].append({'title':{'$regex': each + ' '}})
+		query_title['$or'].append(term)
 
-def rank(body):
-	b = body
-	body = str(body).split()
-	diction = {}
-	print("ranking body .... ", body)
-	for word in body:
-		word = word.encode("utf-8")
-		print("word is : ", word)
-		arr = questionIndex.find_one({word:word})
-		if arr != None:
-			arr = arr['arr']
-			for item in arr:
-				key = str(item[0]).encode("utf-8")
-				if key not in diction:
-					diction[key] = 1
-				else:
-					diction[key] +=1
-	import operator
-	sorted_d = sorted(diction.items(), key=operator.itemgetter(1), reverse=True)  
-	return sorted_d
+		term = {}
+		term['$or'] = []
+		term['$or'].append({'body':{'$regex': ' ' + each}})
+		term['$or'].append({'body':{'$regex': each + ' '}})
+		query_body['$or'].append(term)
+
+	search_query['$or'].append(query_title)
+	search_query['$or'].append(query_body)
+
+	results = questionTable.find(search_query)
+
+	ret =[]
+	count = 0
+	for q in results:
+		if(count == limit ):
+			break;
+		if q['timestamp'] <= timestamp:
+			temp = {
+							'id': str(q['pid']),
+							'title':q['title'],
+							'body': q['body'],
+							'tags': q['tags'],
+							'answer_count': 0,
+							'media': None,
+							'accepted_answer_id': None,
+							'user':q['user'],
+							'timestamp': q['timestamp'],
+							'score': 0,
+							"view_count": q['view_count']
+						}
+			count = count + 1
+			ret.append(temp)			
+	ret.sort(key=lambda x: x['timestamp'], reverse=True)
+	return {'status':'OK','questions': ret,'error':"" }
+
+def filter_without_query(timestamp, limit):
+	print("NO QUERY")
+	questFilter = []
+	allQuestion = questionTable.find();
+	for q in allQuestion:
+		if q['timestamp'] <= timestamp:
+			questFilter.append(q)
+	print('THERE ARE ', len(questFilter))
+	questFilter.sort(key=lambda x: x['timestamp'], reverse=True)
+
+	ret = []  
+	count = 0;
+	for q in questFilter:
+		if(count == limit ):
+			break;
+		temp = {
+					'id': str(q['pid']),
+					'title':q['title'],
+					'body': q['body'],
+					'tags': q['tags'],
+					'answer_count': 0,
+					'media': None,
+					'accepted_answer_id': None,
+					'user':q['user'],
+					'timestamp': q['timestamp'],
+					'score': 0,
+					"view_count": q['view_count']
+				}
+		count = count +1
+		ret.append(temp)
+		
+	return {'status':'OK','questions': ret,'error':"" }

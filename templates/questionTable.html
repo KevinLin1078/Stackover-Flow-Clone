@@ -26,13 +26,17 @@
                                 </div>
                             </div>
                             <div class="panel-body">
-                                <input style='width:700px'type="text" class="form-control" id="dev-table-filter" data-action="filter" data-filters="#dev-table" placeholder="Filter Question" />
-                                <span><select>
-                                    <option value="volvo">25</option>
-                                    <option value="saab">50</option>
-                                    <option value="mercedes">100</option>
-                                    
-                                </select></span>
+                                <input style='width:700px; float:left'type="text" class="form-control" id="dev-table-filter" data-action="filter" data-filters="#dev-table" placeholder="Filter Question" />
+                                <span>
+                                    <select>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                    <button id='clickme'>CLICK ME</button>
+                                </span>
+                                
                             </div>
                             <table class="table table-hover" id="dev-table">
                                 <thead>
@@ -43,20 +47,20 @@
                                         <th>    <a id='sortDate'>Date</a>         </th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id='queryInfo'>
+                                    
                                     {% for item in questionTable %}
                                     <tr>
                                         <th>{{item['pid']}}</th>
                                         <th>{{item['title']}}</th>
                                         <th>{{item['user']['username']}}</th>
-                                        <th>{{item['timestamp']}}</th>
-                                        
+                                        <th>{{item['timestamp']| ctime}}</th>                                       
                                     </tr> 
-                                    <tr>
+                                    <!-- <tr>
                                         <div style='border:1px solid red;'></div>
                                            {{item['body']}}
                                         </div>
-                                    </tr>
+                                    </tr> -->
                                     {% endfor %}
                                     
                                     
@@ -67,7 +71,7 @@
                     
                 </div>
             </div>
-        
+            
 
         <script>
 			$(document).ready(function(){
@@ -135,14 +139,51 @@
 							alert("ERROR OCCURED WHILE ADDING USER " + err)
 						}
 					})
-				})        
+				})
+
+                $("#clickme").click( 
+				function(e) {
+					$.ajax({
+						url: '/search',
+						type: 'POST',
+						contentType:"application/json",
+						dataType:"json",
+						data: JSON.stringify({'q': $('#dev-table-filter').val() }),
+						success: function (data){
+                            var myNode = document.getElementById("dev-table");
+                            var fc = myNode.children[1];
+                            while( fc ) {
+                                myNode.removeChild( fc );
+                                fc = myNode.firstChild;
+                            }
+                            var myvar = '<thead id=\'addHead\'> <tr> <th>    <a id=\'sortId\'>#</a></th> <th>    <a id=\'sortTitle\'>Questions</a>    </th> <th>    <a id=\'sortUser\'>User</a>  </th> <th>    <a id=\'sortDate\'>Date</a>         </th>  </tr></thead>';
+                            $( "#dev-table" ).append( myvar )
+                            myvar = '<tbody id=\'queryInfo\'></tbody>'
+                            $( "#dev-table" ).append( myvar )
+                            
+                            
+                            $.each(data['questions'],function(index,value){ 
+                                
+                                myvar = '<tr>'+
+                                        '            <th>' + value['id'] + '</th>'+
+                                        '            <th>' + value['title'] + '</th>'+
+                                        '            <th>' + value['user']['username'] + '</th>'+
+                                        '            <th>' + value['timestamp'] + '</th>                                       '+
+                                        '        </tr>';
+                                
+                                    $('#queryInfo').append(myvar)
+                                
+                            });
+
+						},
+						error: function(err){
+							alert("ERROR OCCURED WHILE PUTTING USER " + err)
+						}
+					})
+				})   
         
         })
 				
-
-
-                ////////////////////////////////////////////////
-			
 		</script>
     </body>
 
