@@ -26,7 +26,13 @@
                                 </div>
                             </div>
                             <div class="panel-body">
-                                <input type="text" class="form-control" id="dev-table-filter" data-action="filter" data-filters="#dev-table" placeholder="Filter Question" />
+                                <input style='width:700px'type="text" class="form-control" id="dev-table-filter" data-action="filter" data-filters="#dev-table" placeholder="Filter Question" />
+                                <span><select>
+                                    <option value="volvo">25</option>
+                                    <option value="saab">50</option>
+                                    <option value="mercedes">100</option>
+                                    
+                                </select></span>
                             </div>
                             <table class="table table-hover" id="dev-table">
                                 <thead>
@@ -42,8 +48,8 @@
                                     <tr>
                                         <th>{{item['pid']}}</th>
                                         <th>{{item['title']}}</th>
-                                        <th>{{item['username']}}</th>
-                                        <th>{{item['time']}}</th>
+                                        <th>{{item['user']['username']}}</th>
+                                        <th>{{item['timestamp']}}</th>
                                     </tr> 
                                     {% endfor %}
                                     

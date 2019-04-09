@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g
 from werkzeug.security import check_password_hash, generate_password_hash
-import tictac, datetime
+import  datetime
 from flask_cors import CORS
 from flask_mail import Mail
 from flask_mail import Message
@@ -9,8 +9,6 @@ from pymongo import MongoClient
 import time
 app = Flask(__name__)
 client = MongoClient()
-
-
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -35,7 +33,7 @@ answerIndex = db['answerIndex']
 
 @bp.route('/', methods=['GET'])
 def index():
-	return redirect(url_for('routes.login'))
+	return redirect(url_for('routes.search'))
 
 
 @bp.route('/adduser', methods=["POST", "GET"])
@@ -56,7 +54,7 @@ def adduser():
 					'email': email, 
 					'password': password, 
 					'verified': 'no',
-					'reputation': 0
+					'reputation': 1
 				}
 
 		userTable.insert(user)
@@ -176,14 +174,14 @@ def addQuestion():
 		question =	{
 									'pid' : pid,         # id of question
 									'user': {	'username': str(username),
-														'reputation': 0
+														'reputation': 1
 													},
 									'title': title, 
 									'body': body,
 									'score': 0,
 									'view_count': 0,
 									'answer_count': 0,
-									'timestamp': (time.time()),
+									'timestamp': int(time.time()),
 									'media': None,
 									'tags': tags,
 									'accepted_answer_id': None
@@ -230,21 +228,32 @@ def getQuestion(IDD):
 		questionTable.update_one({'pid':pid}, { "$set": {'view_count': count + plus}} )
 		result = questionTable.find_one({'pid':pid})
 
-		
-		question =	{
-							'id' : str(result['pid']),         # id of question
-							'user': result['user'],
-							'title': result['title'], 
-							'body': result['body'],
-							'score': result['score'],
-							'view_count': result['view_count'],
-							'answer_count': result['answer_count'],
-							'timestamp': result['timestamp'],
-							'media': result['media'],
-							'tags': result['tags'],
-							'accepted_answer_id': None
+		score = result['score']
+		view_count = result['view_count']
+		answer_count = result['answer_count']
+		media = result['media']
+		tags = result['tags']
+		title = result['title']
+		body = result['body']
+		pid = str(result['pid'])
+		timestamp = result['timestamp']
+		user = result['user']
+		question = 	{ 	'status':'OK',
+							"question": {
+											"score": score,
+											"view_count": view_count,
+											"answer_count": 0,
+											"media": None,
+											"tags": tags,
+											"accepted_answer_id": None,
+											"title": title,
+											"body": body,
+											"id": pid,
+											"timestamp": timestamp,
+											"user": user
+										}
 						}
-		return responseOK({'status':'OK', 'question': question})
+		return responseOK(question)
 	elif request.method == 'DELETE':
 		print("=========================QUESTION/ID====DELETE===============================")
 		if len(session) == 0:
@@ -326,8 +335,8 @@ def getAnswers(IDD):
 		
 @bp.route('/search', methods=['GET', 'POST'])
 def search():
-	# if request.method == 'GET':
-	# 	return render_template('forum.html')
+	if request.method == 'GET':
+		return render_template('questionTable.html', questionTable=questionTable.find())
 	if request.method == 'POST':
 		print('--------------------------------Search-----------------------------')
 		timestamp = time.time()
@@ -347,18 +356,22 @@ def search():
 		if 'limit' in request.json:
 			limit = request.json['limit']
 		
-		q = ''
+		query = ''
 		if 'q' in request.json:
-			q = request.json['q']
-
-		if len(q) == 0:
+			query = request.json['q'].encode("utf-8").strip()
+		print("query: ", query)
+		print("timestamp: ", timestamp )
+		print("limit: ", limit)
+		
+		if len(query) == 0:
+			print("NO QUERY")
 			questFilter = []
 			allQuestion = questionTable.find();
 			for q in allQuestion:
-				if q['time'] <= timestamp:
+				if q['timestamp'] <= timestamp:
 					questFilter.append(q)
 			print('THERE ARE ', len(questFilter))
-			questFilter.sort(key=lambda x: x['time'], reverse=True)
+			questFilter.sort(key=lambda x: x['timestamp'], reverse=True)
 
 			ret = []  
 			count = 0;
@@ -374,16 +387,60 @@ def search():
 							'media': None,
 							'accepted_answer_id': None,
 							'user':q['user'],
-							'timestamp': q['time'],
+							'timestamp': q['timestamp'],
 							'score': 0,
 							"view_count": q['view_count']
 						}
 				count = count +1
 				ret.append(temp)
 				
-			return jsonify({'status':'OK','questions': ret,'error':"" })
+			return responseOK({'status':'OK','questions': ret,'error':"" })
 		else:
-			pass;
+			print("WITH QUERY")
+			questFilter = []
+			allQuestion = questionTable.find();
+			for q in allQuestion:
+				if q['timestamp'] <= timestamp:
+					questFilter.append(q)
+			print('THERE ARE ', len(questFilter))
+			questFilter.sort(key=lambda x: x['timestamp'], reverse=True)
+
+			ret = []  
+			count = 0;
+			ranking = rank(query)
+
+
+			'''
+			qq = str(query).split()
+			length = len(qq)
+
+			for item in ranking:
+				for q in questFilter:
+					if(count == limit ):
+						break;
+					if str(item[0]) == str(q['pid']) and item[1] == length:
+						temp = {
+								'id': str(q['pid']),
+								'title':q['title'],
+								'body': q['body'],
+								'tags': q['tags'],
+								'answer_count': 0,
+								'media': None,
+								'accepted_answer_id': None,
+								'user':q['user'],
+								'timestamp': q['timestamp'],
+								'score': 0,
+								"view_count": q['view_count']
+							}
+						count = count +1
+						ret.append(temp)
+			'''
+			ret.sort(key=lambda x: x['timestamp'], reverse=True)
+			return responseOK({'status':'OK','questions': ret,'error':"" })
+
+			# for item in ret:
+			# 	print('title: ', item['title'])
+			# 	print('body: ' ,item['body'])
 
 
 def responseOK(stat):
@@ -397,16 +454,6 @@ def responseNO(stat):
 	jsonData = json.dumps(data)
 	respond = Response(jsonData,status=204, mimetype='application/json')
 	return respond
-
-
-# userTable = db['user'] 
-# answerTable = db['answer']
-# aidTable = db['answer_id']
-# questionTable = db['question']
-# pidTable = db['pid']
-# ipTable = db['ip']
-# questionIndex = db['questionIndex']
-# answerIndex = db['answerIndex']
 
 def questionStore(title, body, pid):
    parseAlgo(title, pid)
@@ -432,3 +479,47 @@ def parseAlgo(body, pid):
             else:
                questionIndex.update_one({word:word}, {'$push': {'arr': [pid, 1]  }}  )
 
+
+
+def rank(body):
+	b = body
+	body = str(body).split()
+	diction = {}
+	print("ranking body .... ", body)
+	for word in body:
+		word = word.encode("utf-8")
+		print("word is : ", word)
+		arr = questionIndex.find_one({word:word})
+		if arr != None:
+			arr = arr['arr']
+			for item in arr:
+				key = str(item[0]).encode("utf-8")
+				if key not in diction:
+					diction[key] = 1
+				else:
+					diction[key] +=1
+	import operator
+	sorted_d = sorted(diction.items(), key=operator.itemgetter(1), reverse=True)  
+	return sorted_d
+'''
+def rank(body):
+   b = body
+   body = str(body).split()
+   diction = {}
+
+   for word in body:
+      arr = questionIndex.find_one({word:word})
+		arr =arr['arr']
+		print("ranking .... ", arr)
+      for item in arr:
+         key = str(item[0])
+         if key not in diction:
+            diction[key] = 1
+         else:
+            diction[key] +=1
+   print(diction)
+   import operator
+   sorted_d = sorted(diction.items(), key=operator.itemgetter(1), reverse=True)  
+   print(sorted_d)
+   return sorted_d
+'''
