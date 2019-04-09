@@ -184,8 +184,7 @@ def addQuestion():
 									'accepted_answer_id': None
 								}
 		pid = str(pid)
-		questionStore(title, body, pid)
-		questionTable.insert(question, check_keys=False)
+		questionTable.insert(question)
 		return responseOK({ 'status': 'OK', 'id':pid}) 
 
 @bp.route('/questions/<IDD>', methods=[ "GET", 'DELETE'])
@@ -357,7 +356,7 @@ def search():
 		
 		query = ''
 		if 'q' in request.json:
-			query = request.json['q'].encode("utf-8").strip()
+			query = request.json['q'].encode("utf-8").strip().lower()
 		print("query: ", query)
 		print("timestamp: ", timestamp )
 		print("limit: ", limit)
@@ -396,39 +395,56 @@ def search():
 			return responseOK({'status':'OK','questions': ret,'error':"" })
 		else:
 			print("WITH QUERY")
-			questFilter = []
-			allQuestion = questionTable.find();
-			for q in allQuestion:
+			search_query = {}
+			search_query['$or'] = []
+
+			query_title = {}
+			query_title['$or'] = []
+
+			query_body = {}
+			query_body['$or'] =[]
+			query = query.lower()
+			query = query.split(' ')
+
+			for each in query:
+				term = {}
+				term['$or'] = []
+				term['$or'].append({'title':{'$regex': ' ' + each}})
+				term['$or'].append({'title':{'$regex': each + ' '}})
+				query_title['$or'].append(term)
+
+				term = {}
+				term['$or'] = []
+				term['$or'].append({'body':{'$regex': ' ' + each}})
+				term['$or'].append({'body':{'$regex': each + ' '}})
+				query_body['$or'].append(term)
+
+			search_query['$or'].append(query_title)
+			search_query['$or'].append(query_body)
+
+			results = questionTable.find(search_query)
+
+			ret =[]
+			count = 0
+			for q in results:
+				if(count == limit ):
+					break;
 				if q['timestamp'] <= timestamp:
-					questFilter.append(q)
-			print('THERE ARE ', len(questFilter))
-			questFilter.sort(key=lambda x: x['timestamp'], reverse=True)
-
-			ret = []  
-			count = 0;
-			ranking = rank(query.lower())
-
-			for item in ranking:
-				for q in questFilter:
-					if(count == limit ):
-						break;
-					if str(item[0]) == str(q['pid']):
-						temp = {
-								'id': str(q['pid']),
-								'title':q['title'],
-								'body': q['body'],
-								'tags': q['tags'],
-								'answer_count': 0,
-								'media': None,
-								'accepted_answer_id': None,
-								'user':q['user'],
-								'timestamp': q['timestamp'],
-								'score': 0,
-								"view_count": q['view_count']
-							}
-						count = count +1
-						ret.append(temp)
-
+					temp = {
+									'id': str(q['pid']),
+									'title':q['title'],
+									'body': q['body'],
+									'tags': q['tags'],
+									'answer_count': 0,
+									'media': None,
+									'accepted_answer_id': None,
+									'user':q['user'],
+									'timestamp': q['timestamp'],
+									'score': 0,
+									"view_count": q['view_count']
+								}
+					count = count + 1
+					ret.append(temp)			
 			ret.sort(key=lambda x: x['timestamp'], reverse=True)
 			return responseOK({'status':'OK','questions': ret,'error':"" })
 
@@ -455,7 +471,7 @@ def parseAlgo(body, pid):
       for word in body:
          result = questionIndex.find_one({word: word})
          if result == None:
-            questionIndex.insert({ word: word, 'arr': [[pid,1]]  }, check_keys=False)
+            questionIndex.insert({ word: word, 'arr': [[pid,1]]  })
          else:
             arr = result['arr']
             found = False
@@ -491,25 +507,3 @@ def rank(body):
 	import operator
 	sorted_d = sorted(diction.items(), key=operator.itemgetter(1), reverse=True)  
 	return sorted_d
-'''
-def rank(body):
-   b = body
-   body = str(body).split()
-   diction = {}
-
-   for word in body:
-      arr = questionIndex.find_one({word:word})
-		arr =arr['arr']
-		print("ranking .... ", arr)
-      for item in arr:
-         key = str(item[0])
-         if key not in diction:
-            diction[key] = 1
-         else:
-            diction[key] +=1
-   print(diction)
-   import operator
-   sorted_d = sorted(diction.items(), key=operator.itemgetter(1), reverse=True)  
-   print(sorted_d)
-   return sorted_d
-'''
