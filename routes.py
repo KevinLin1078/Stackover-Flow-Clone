@@ -143,7 +143,24 @@ def getUserQuestions(getName):
 		
 		return responseOK(questionReturn)
 
+@bp.route('/user/<getName>/answers', methods=["GET"])
+def getUserAnnswer(getName):
+	if request.method == 'GET':
+		print("=========================USER/<GETNAME> QUESTION==============GET=================")
+		username = str(getName)
+		print(username)
+		result = userTable.find_one({'username':username})
+		if result == None:
+			return responseOK({'status': 'error'})
+		
+		allAnswers = answerTable.find({ 'username': username } )
+		
+		answerReturn = {'status':'OK', 'answers': [] }
 
+		for result in allAnswers:
+			answerReturn['answers'].append(str(result['aid']))
+		
+		return responseOK(answerReturn)
 
 
 @bp.route('/questions/add', methods=["POST", "GET"])
@@ -259,7 +276,7 @@ def getQuestion(IDD):
 		print("=========================QUESTION/ID====DELETE===============================")
 		if len(session) == 0:
 			print("CANT DELETE USER NOT LOGGED IN")
-			return responseOK({'status':'error'})
+			return responseNO({'status':'error'})
 		else:
 			result = questionTable.find_one({'pid':pid})
 			if( result == None):
@@ -307,7 +324,8 @@ def addAnswer(IDD):
 					'userID':  userID,
 					'timestamp': (time.time()),
 					'is_accepted': False,
-					'score' : 0
+					'score' : 0,
+					'username': session['user']
 					}
 		answerTable.insert(answer)
 		return responseOK({'status': 'OK', 'id': str(aid)})
@@ -339,7 +357,7 @@ def getAnswers(IDD):
 @app.template_filter('ctime')
 def timectime(s):
 	return time.ctime(s) # datetime.datetime.fromtimestamp(s)
-	
+
 @bp.route('/search', methods=['GET', 'POST','PUT'])
 def search():
 	if request.method == 'GET':
@@ -382,7 +400,6 @@ def search():
 			answer = filter_with_query(query, timestamp, limit)
 			return responseOK(answer)
 
-
 def responseOK(stat):
 	data = stat
 	jsonData = json.dumps(data)
@@ -392,7 +409,7 @@ def responseOK(stat):
 def responseNO(stat):
 	data = stat
 	jsonData = json.dumps(data)
-	respond = Response(jsonData,status=204, mimetype='application/json')
+	respond = Response(jsonData,status=404, mimetype='application/json')
 	return respond
 
 def filter_with_query(query, timestamp, limit):
