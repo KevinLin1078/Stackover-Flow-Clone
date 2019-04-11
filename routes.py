@@ -362,7 +362,12 @@ def timectime(s):
 def search():
 	if request.method == 'GET':
 		result = questionTable.find()
-		return render_template('questionTable.html', questionTable=result)
+		login= 0
+		if len(session) == 0:
+			login = 0
+		else:
+			login = 1
+		return render_template('questionTable.html', questionTable=result, login= login)
 	if request.method == 'PUT':
 		result = questionTable.find()
 		return render_template('questionTable.html', questionTable=result)

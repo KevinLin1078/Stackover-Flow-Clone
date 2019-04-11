@@ -8,6 +8,7 @@
     </head>  
     <body>
         <div class="container">
+            
             {% if login == 0  %}<button onclick="window.location.href='/login'"/> Login</button>{% endif %}
 			{% if login == 0  %}<button onclick="window.location.href='/adduser'"> Sign Up</button>{% endif %}
             {% if login == 0  %}<button onclick="window.location.href='/verify'"> Verify</button>{% endif %}
@@ -24,15 +25,16 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="panel-body" class="col-md-12">
-                                <span>
+                            <div id="searchMe" class="panel-body" class="col-md-12">
+                                <span >
+                                    <button id='clickme'>Search</button>
                                     <select>
                                         <option value="25">25</option>
                                         <option value="50">50</option>
                                         <option value="100">100</option>
                                         <option value="all">All</option>
                                     </select>
-                                    <button id='clickme'>Search</button>
+                                    
                                     
                                 </span>
                                 <span><input style='width:700px;'type="text" class="form-control" id="dev-table-filter" data-action="filter" data-filters="#dev-table" placeholder="Filter Question" /></span>
@@ -56,22 +58,26 @@
                                         <th>{{item['user']['username']}}</th>
                                         <th>{{item['timestamp']}}</th>                                       
                                     </tr> 
-                                    <!-- <tr>
-                                        <div style='border:1px solid red;'></div>
-                                           {{item['body']}}
-                                        </div>
-                                    </tr> -->
+                                    
                                     {% endfor %}
                                     
                                     
                                 </tbody>
                             </table>
+                            
+
                         </div>
                     </div>
                     
                 </div>
             </div>
-            
+            <div id='actual_body' class="container" style='display: none;; border-left:1px solid green; border-radius: 10px; height: auto; padding: 0px 10px;line-height: 40px; word-wrap: break-word;'>
+                <button id='back_button'>Back</button>
+                <h2 class="font-weight-bold" style="color:green;" id='question_title'>Place Title Here</h2>
+                
+                <p id='question_body' style='color:black'>Place Body Here</p>
+                
+            </div>
 
         <script>
 			$(document).ready(function(){
@@ -150,6 +156,7 @@
 						dataType:"json",
 						data: JSON.stringify({'q': $('#dev-table-filter').val() }),
 						success: function (data){
+                            // data = JSON.parse(data)
                             var myNode = document.getElementById("dev-table");
                             var fc = myNode.children[1];
                             while( fc ) {
@@ -181,16 +188,27 @@
 						}
 					})
 				})   
+                $('#back_button').click(
+                    function(){
+                        $('#actual_body').hide()
+                        $('#dev-table').show()
+                        $('#searchMe').show()
+                    }
+                )
                 $("a.kevin").click( 
 				function() {
                     var key = $(this).attr("id")
-                    alert(key)
 					$.ajax({
 						url: '/questions/' + key.toString(),
 						type: 'GET',
                         dataType:"html",
 						success: function (data){
-                            //document.write(data['question']['body'])
+                            var data = JSON.parse(data);
+                            $('#question_title').text(data['question']['title'])
+                            $('#question_body').text(data['question']['body'])
+                            $('#actual_body').show()
+                            $('#dev-table').hide()
+                            $('#searchMe').hide()
 						},
 						error: function(err){
 							alert("ERROR OCCURED WHILE PUTTING USER " + err)
