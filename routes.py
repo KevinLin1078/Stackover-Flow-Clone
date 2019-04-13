@@ -33,7 +33,7 @@ answerIndex = db['answerIndex']
 
 @bp.route('/', methods=['GET'])
 def index():
-	return redirect(url_for('routes.search'))
+	return redirect(url_for('routes.login'))
 
 
 @bp.route('/adduser', methods=["POST", "GET"])
@@ -91,12 +91,15 @@ def login():
 		print("=========================LOGIN POST===============================")
 		print("POST LOGIN JSON" , jss)
 		get_user = userTable.find_one( { 'username': str(jss['username']) } )
+		if get_user == None:
+			return responseOK({'status': 'error'})
+		
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
 			session.clear()
 			session['user'] = jss['username']
 			return responseOK({'status': 'OK'})
 		else:
-			return responseOK({'status': 'error'})
+			return responseOK({'status': 'not verified and not password'})
 	
 
 
@@ -165,6 +168,8 @@ def getUserAnnswer(getName):
 
 @bp.route('/questions/add', methods=["POST", "GET"])
 def addQuestion():
+	if request.method == "GET":
+		return render_template('addQuestion.html')
 	if(request.method == 'POST'):
 		print("=========================QUESTION/ADD POST==============nnnnn=================")
 		if len(session) == 0:
@@ -357,6 +362,18 @@ def getAnswers(IDD):
 @app.template_filter('ctime')
 def timectime(s):
 	return time.ctime(s) # datetime.datetime.fromtimestamp(s)
+
+
+@bp.route('/searchOK', methods=['GET'])
+def searchOK():
+	if request.method == 'GET':
+		result = questionTable.find()
+		login= 0
+		if len(session) == 0:
+			login = 0
+		else:
+			login = 1
+		return render_template('questionTable.html', questionTable=result, login= login)
 
 @bp.route('/search', methods=['GET', 'POST','PUT'])
 def search():

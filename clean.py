@@ -92,3 +92,22 @@ results = questionTable.find(search_query)
 for i in results:
    print(i)
 '''
+'''
+use stack
+db.createCollection("user")
+db.createCollection("question")
+db.createCollection("ip")
+db.createCollection("answer")
+
+'''
+
+#userTable.remove()
+#userTable.insert({'email': "kevin" , 'pass': None} )
+#userTable.insert({'email': "nicole" , 'pass': None} )
+
+
+#print( userTable.find_one({'email':'nicole'})['email']          )
+
+#query = {"email": "mykey"}
+#newVal = {"$set": {"key": "KKKK"}}  
+#userTable.update_one(query, newVal)

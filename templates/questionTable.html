@@ -1,4 +1,4 @@
- <html> 
+<html> 
     <head> 
         <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
         <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
@@ -12,6 +12,7 @@
             {% if login == 0  %}<button onclick="window.location.href='/login'"/> Login</button>{% endif %}
 			{% if login == 0  %}<button onclick="window.location.href='/adduser'"> Sign Up</button>{% endif %}
             {% if login == 0  %}<button onclick="window.location.href='/verify'"> Verify</button>{% endif %}
+            {% if login == 1  %}<button onclick="window.location.href='/questions/add'" id='addQuestion' > Add Question</button>{% endif %}
             {% if login == 1  %} <button id='logout'> Logout</button>{% endif %}
             
             <h2>Stack All The Flow </h2>
@@ -79,6 +80,7 @@
                 
             </div>
 
+
         <script>
 			$(document).ready(function(){
                 $("#logout").click( 
@@ -107,38 +109,6 @@
 						contentType:"application/json",
 						dataType:"json",
 						data: JSON.stringify({'user': 'user'}),
-						success: function (data){
-						},
-						error: function(err){
-							alert("ERROR OCCURED WHILE ADDING USER " + err)
-						}
-					})
-				})
-
-                $("#sortDate").click( 
-				function(e) {
-					$.ajax({
-						url: '/search',
-						type: 'GET',
-						contentType:"application/json",
-						dataType:"json",
-						data: JSON.stringify({'date': 'user'}),
-						success: function (data){
-						},
-						error: function(err){
-							alert("ERROR OCCURED WHILE ADDING USER " + err)
-						}
-					})
-				})
-        
-                $("#sortTitle").click( 
-				function(e) {
-					$.ajax({
-						url: '/search',
-						type: 'GET',
-						contentType:"application/json",
-						dataType:"json",
-						data: JSON.stringify({'title': 'user'}),
 						success: function (data){
 						},
 						error: function(err){
@@ -198,6 +168,7 @@
                 $("a.kevin").click( 
 				function() {
                     var key = $(this).attr("id")
+                    
 					$.ajax({
 						url: '/questions/' + key.toString(),
 						type: 'GET',

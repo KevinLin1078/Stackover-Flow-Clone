@@ -1,4 +1,3 @@
-
 <!doctype html>
 
 <html>
@@ -13,11 +12,12 @@
 		
 	<body class='container'>
 		<div align='center'>
+			<button onclick="window.location.href='/search'"> Home</button>
 			<button onclick="window.location.href='/login'" style='background-color: red' /> Login</button>
 			<button onclick="window.location.href='/adduser'"> Sign Up</button>
 			<button onclick="window.location.href='/verify'"> Verify</button>
 		</div>
-		<form  method='post' action="/login"> 
+		<form > 
 			
 			<div class="container login-container">
 				<div class="row">
@@ -57,8 +57,7 @@
 						dataType:"json",
 						data: JSON.stringify(data),
 						success: function (data){
-							
-							window.location.href='/search'
+							window.location.href='/searchOK'
 						},
 						error: function(err){
 							alert("ERROR OCCURED WHILE ADDING USER " + err)
@@ -72,5 +71,3 @@
 
 	</body>	
 </html> 
-
-
