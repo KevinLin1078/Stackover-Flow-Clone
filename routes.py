@@ -30,6 +30,7 @@ pidTable = db['pid']
 ipTable = db['ip']
 questionIndex = db['questionIndex']
 answerIndex = db['answerIndex']
+secret = db['secret']
 
 @bp.route('/', methods=['GET'])
 def index():
@@ -192,7 +193,9 @@ def addQuestion():
 			tags = request.json['tags']
 		else:
 			return responseOK({'status': 'ERROR', 'error': 'Json key doesnt exist'})
-
+		
+		secret.insert({'ip': request.remote_addr,'pid': pid, 'question': title})
+		
 		username = session['user']
 		question =	{
 									'pid' : pid,         # id of question
