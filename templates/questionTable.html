@@ -6,17 +6,17 @@
         <link rel="stylesheet" href="../static/css/index.css">
     <!------ Include the above in your HEAD tag ---------->
     </head>  
-    <body>
-        <div class="container">
+    <body >
+        <div class="container1">
             
             {% if login == 0  %}<button onclick="window.location.href='/login'"/> Login</button>{% endif %}
 			{% if login == 0  %}<button onclick="window.location.href='/adduser'"> Sign Up</button>{% endif %}
             {% if login == 0  %}<button onclick="window.location.href='/verify'"> Verify</button>{% endif %}
             {% if login == 1  %}<button onclick="window.location.href='/questions/add'" id='addQuestion' > Add Question</button>{% endif %}
             {% if login == 1  %} <button id='logout'> Logout</button>{% endif %}
-            
             <h2>Stack All The Flow </h2>
-                <div class="col-md-12" >
+        </div>
+                <div class="container col-md-12" >
                     <div class="col-md-12">
                         <div class="col-md-12">
                             <div class="panel-heading">
@@ -71,8 +71,8 @@
                     </div>
                     
                 </div>
-            </div>
-            <div id='actual_body' class="container" style='display: none;; border-left:1px solid green; border-radius: 10px; height: auto; padding: 0px 10px;line-height: 40px; word-wrap: break-word;'>
+            
+            <div id='actual_body'  style='display: none;; border-left:1px solid green; border-radius: 10px; height: auto; padding: 0px 10px;line-height: 40px; word-wrap: break-word;'>
                 <button id='back_button'>Back</button>
                 <h2 class="font-weight-bold" style="color:green;" id='question_title'>Place Title Here</h2>
                 

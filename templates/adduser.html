@@ -7,32 +7,31 @@
 		<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 		<link rel="stylesheet" href="../static/css/index.css">
+		<link rel="stylesheet" href="../static/css/main.css">
 		<title>Sign up Page</title>
 		
 	</head>
 		
-	<body class='container'>
-		<div align='center'>
+	<body class="container-contact100">
+		
 			<button onclick="window.location.href='/search'"> Home</button>
 			<button onclick="window.location.href='/login'"/> Login</button>
 			<button onclick="window.location.href='/adduser'"style='background-color: red'> Sign Up</button>
 			<button onclick="window.location.href='/verify'"> Verify</button>
-		</div>
+	
 		<form  > 
-			
-			<div class="container login-container">
-				<div class="row">
-					<div class="col-md-6 ">
-						<h3 style='color: red'>Sign up </h3>
+					
+					<div class="col-md-12 ">
+						
 						<form >
-							<div class="form-group">
-								<input type="text" class="form-control" placeholder="Username" value="" name='username' id='username'/>
+							<div class="wrap-input100 validate-input" data-validate="Username">
+								<input type="text" class="input100" placeholder="Username" value="" name='username' id='username'/>
 							</div>
-							<div class="form-group">
-								<input type="text" class="form-control" placeholder="Email" value="" name='email'id='email'/>
+							<div class="wrap-input100 validate-input" data-validate="Email">
+								<input type="text" class="input100" placeholder="Email" value="" name='email'id='email'/>
 							</div>
-							<div class="form-group">
-								<input type="password" class="form-control" placeholder="Password" value="" name='password' id='password'/>
+							<div class="wrap-input100 validate-input" data-validate="Password">
+								<input type="password" class="input100" placeholder="Password" value="" name='password' id='password'/>
 							</div>
 							<div class="form-group">
 								<input type="submit" class="btnSubmit" value="Sign up" id="adduser"/>
@@ -42,9 +41,7 @@
 							</div> -->
 						</form>
 					</div>
-				</div>
-			</div>
-		
+			
 		</form>
 		<script>
 				$(document).ready(function(){
@@ -65,7 +62,7 @@
 								window.location.href='/verify'
 							},
 							error: function(err){
-								alert("ERROR OCCURED WHILE ADDING USER " + err)
+								alert("Sign Up Error " + err)
 							}
 						})
 					})			

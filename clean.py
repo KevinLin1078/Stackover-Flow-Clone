@@ -44,6 +44,11 @@ answerIndex.insert({})
 pidTable.insert({'pid':'pid', 'id': 1})
 aidTable.insert({'aid':'aid', 'id': 1})
 
+
+
+# secret =db['secret']
+# secret.insert({'ip':'ip', 'id': 1})
+
 userTable.delete_many({})
 answerTable.delete_many({})
 questionTable.delete_many({})
