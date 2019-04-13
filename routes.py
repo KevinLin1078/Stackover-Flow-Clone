@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g
 from werkzeug.security import check_password_hash, generate_password_hash
 import  datetime
-from flask_cors import CORS
 from flask_mail import Mail
 from flask_mail import Message
 import pymongo 
@@ -19,7 +18,6 @@ app.config['MAIL_PASSWORD']= '@12345678kn'
 #app.config.update(dict(DEBUG=True, MAIL_SERVER = 'smtp.gmail.com',MAIL_PORT = 587,MAIL_USE_TLS = True,MAIL_USE_SSL = False,MAIL_USERNAME = 'bluekevin61@gmail.com',MAIL_PASSWORD = 'QWERTYUIO'))
 mail = Mail(app)
 bp = Blueprint('routes', __name__, template_folder='templates')
-CORS(bp)
 
 db = client.stack
 userTable = db['user'] 
@@ -34,7 +32,7 @@ secret = db['secret']
 
 @bp.route('/', methods=['GET'])
 def index():
-	return redirect(url_for('routes.login'))
+	return redirect(url_for('routes.search'))
 
 
 @bp.route('/adduser', methods=["POST", "GET"])
@@ -211,7 +209,8 @@ def addQuestion():
 									'media': None,
 									'tags': tags,
 									'accepted_answer_id': None,
-									'username': str(username)
+									'username': str(username),
+									'realIP': request.remote_addr
 								}
 		pid = str(pid)
 		questionTable.insert(question)
@@ -248,8 +247,6 @@ def getQuestion(IDD):
 			else:
 				print('USER IS LOGGED IN AND USER EXISTS IN IPDB', ip)
 		
-		print('VALUE ADDED TO VIEW COUNT: ', plus)
-		
 		count = result['view_count']
 		questionTable.update_one({'pid':pid}, { "$set": {'view_count': count + plus}} )
 		result = questionTable.find_one({'pid':pid})
@@ -277,9 +274,23 @@ def getQuestion(IDD):
 											"id": pid,
 											"timestamp": timestamp,
 											"user": user
-										}
+										},
+							"answers":[]
 						}
+		'''THIS PART IS FOR HTML'''
+		pid = int(IDD)
+		allAnswers = answerTable.find({'pid': pid})
+		for result in allAnswers:
+			temp =	{
+						'id': str(result['aid']),
+						'user': result['user'],
+						'answer': result['body']
+					}
+
+			question['answers'].append(temp)
+		'''This Part Needs to be deleted'''
 		return responseOK(question)
+
 	elif request.method == 'DELETE':
 		print("=========================QUESTION/ID====DELETE===============================")
 		if len(session) == 0:
@@ -320,7 +331,7 @@ def addAnswer(IDD):
 
 		userID = userTable.find_one({'username': session['user']})['_id']
 		userID = str(userID)
-
+		
 		aid = aidTable.find_one({'aid':'aid'})['id']
 		aidTable.update_one({'aid': 'aid'}, {"$set": {"id": aid+1 }} )
 		answer = 	{
@@ -364,7 +375,9 @@ def getAnswers(IDD):
 
 @app.template_filter('ctime')
 def timectime(s):
-	return time.ctime(s) # datetime.datetime.fromtimestamp(s)
+	
+	return str(time.ctime(s))[3:19] # datetime.datetime.fromtimestamp(s)
+
 
 
 @bp.route('/searchOK', methods=['GET'])

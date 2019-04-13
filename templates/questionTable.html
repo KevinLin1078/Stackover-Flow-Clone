@@ -4,6 +4,7 @@
         <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
         <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
         <link rel="stylesheet" href="../static/css/index.css">
+        
     <!------ Include the above in your HEAD tag ---------->
     </head>  
     <body >
@@ -15,15 +16,15 @@
             {% if login == 1  %}<button onclick="window.location.href='/questions/add'" id='addQuestion' > Add Question</button>{% endif %}
             {% if login == 1  %} <button id='logout'> Logout</button>{% endif %}
             <h2>Stack All The Flow </h2>
+            {% if login == 1  %} <h3> Hello {{session['user']}}</h3>{% endif %}
+           
         </div>
                 <div class="container col-md-12" >
                     <div class="col-md-12">
                         <div class="col-md-12">
                             <div class="panel-heading">
                                 <div class="pull-right">
-                                    <span class="clickable filter" data-toggle="tooltip" title="Toggle table filter" data-container="body">
-                                        <i class="glyphicon glyphicon-filter"></i>
-                                    </span>
+                                    
                                 </div>
                             </div>
                             <div id="searchMe" class="panel-body" class="col-md-12">
@@ -57,7 +58,7 @@
                                         <th>{{item['pid']}}</th>
                                         <th onmouseover='' style='cursor: pointer'><a class='kevin' id="{{item['pid']}}">{{item['title']}} </a></th>
                                         <th>{{item['user']['username']}}</th>
-                                        <th>{{item['timestamp']}}</th>                                       
+                                        <th>{{item['timestamp'] | ctime}}</th>                                       
                                     </tr> 
                                     
                                     {% endfor %}
@@ -71,18 +72,27 @@
                     </div>
                     
                 </div>
-            
-            <div id='actual_body'  style='display: none;; border-left:1px solid green; border-radius: 10px; height: auto; padding: 0px 10px;line-height: 40px; word-wrap: break-word;'>
+      
+       <div id='actual_body' style='display: none;'>
+            <div   style='margin-left:20px;font-size: 20px; border-left:1px solid green; border-radius: 10px; height: auto; padding: 0px 10px;line-height: 40px; word-wrap: break-word;'>
                 <button id='back_button'>Back</button>
-                <h2 class="font-weight-bold" style="color:green;" id='question_title'>Place Title Here</h2>
-                
-                <p id='question_body' style='color:black'>Place Body Here</p>
+                <h2 style='' id='realQuestionID' ></h2>
+                <h2 class="font-weight-bold" style="color:green;" id='question_title'> Place Title Here</h2>
+                <p id='question_body' style='color:black'>Place Body Here</p>                
+            </div>
+            
+            <textarea id='textarea' style='margin-left: 20px; width:700px; height:70px' ></textarea>
+            <button style='margin-left: 20px;font-size: 20px'id='answer_submit'>Answer</button>
+            <div id='answerTable' style='margin-left: 20px; height: 80px; width:730px'>
                 
             </div>
+            
+        </div>
 
 
         <script>
 			$(document).ready(function(){
+                
                 $("#logout").click( 
 				function(e) {
 					$.ajax({
@@ -101,22 +111,6 @@
 					})
 				})
                 
-                $("#sortUser").click( 
-				function(e) {
-					$.ajax({
-						url: '/search',
-						type: 'GET',
-						contentType:"application/json",
-						dataType:"json",
-						data: JSON.stringify({'user': 'user'}),
-						success: function (data){
-						},
-						error: function(err){
-							alert("ERROR OCCURED WHILE ADDING USER " + err)
-						}
-					})
-				})
-
                 $("#clickme").click( 
 				function(e) {
 					$.ajax({
@@ -143,7 +137,7 @@
                                 
                                 myvar = '<tr>'+
                                         '            <th>' + value['id'] + '</th>'+
-                                        '            <th>' + '<a class="kevin" style="color:green "id="' + value['id'].toString() + '">'+ value['title'] + '</a>' + '</th>' +
+                                        '            <th>' + '<a class="kevin" id="' + value['id'].toString() + '">'+ value['title'] + '</a>' + '</th>' +
                                         '            <th>' + value['user']['username'] + '</th>'+
                                         '            <th>' + value['timestamp'] + '</th>  '+
                                         '        </tr>';
@@ -165,7 +159,7 @@
                         $('#searchMe').show()
                     }
                 )
-                $("a.kevin").click( 
+                $("a.kevin").click( //clickes on question
 				function() {
                     var key = $(this).attr("id")
                     
@@ -175,17 +169,137 @@
                         dataType:"html",
 						success: function (data){
                             var data = JSON.parse(data);
+                            $('#realQuestionID').text(key)
                             $('#question_title').text(data['question']['title'])
                             $('#question_body').text(data['question']['body'])
                             $('#actual_body').show()
                             $('#dev-table').hide()
                             $('#searchMe').hide()
+                            
+                            var myNode = document.getElementById("answerTable");
+                            var fc = myNode.children[0];
+                            while( fc ) {
+                                myNode.removeChild( fc );
+                                fc = myNode.firstChild;
+                            }
+
+                            $.each(data['answers'],function(index,value){ 
+                                
+                                myvar =  '<p style="border:1px solid green">' + value['answer'] + '</p>'
+                                    $('#answerTable').prepend(myvar)
+                                
+                            });
 						},
 						error: function(err){
 							alert("ERROR OCCURED WHILE PUTTING USER " + err)
 						}
 					})
 				})
+                //answer_submit
+                $("#answer_submit").click( //clickes on question
+				function() {
+                    var body = $('#textarea').val()
+                    
+					$.ajax({
+						url: '/questions/' + $('#realQuestionID').text() + '/answers/add',
+						type: 'POST',
+                        contentType:"application/json",
+						dataType:"json",
+						data: JSON.stringify({'body': body }),
+						success: function (data){
+                            stat = data['status'].toString()
+                           
+                            if(stat== "error"){
+                                alert("Please Login to Answer Questions")
+                            }else{
+
+
+
+                                myvar = '<p style="border:1px solid green">' + body + '</p>'
+                                $('#answerTable').prepend(myvar)
+                                $('#textarea').val("")
+                                alert("Answer Added")
+                            }
+						},
+						error: function(err){
+							alert("ERROR OCCURED WHILE PUTTING USER " + err)
+						}
+					})
+				})
+
+
+                $(document).on( 'click', 'a.kevin',//clickes on question
+				function() {
+                    var key = $(this).attr("id")
+                    
+					$.ajax({
+						url: '/questions/' + key.toString(),
+						type: 'GET',
+                        dataType:"html",
+						success: function (data){
+                            var data = JSON.parse(data);
+                            $('#realQuestionID').text(key)
+                            $('#question_title').text(data['question']['title'])
+                            $('#question_body').text(data['question']['body'])
+                            $('#actual_body').show()
+                            $('#dev-table').hide()
+                            $('#searchMe').hide()
+                            
+                            var myNode = document.getElementById("answerTable");
+                            var fc = myNode.children[0];
+                            while( fc ) {
+                                myNode.removeChild( fc );
+                                fc = myNode.firstChild;
+                            }
+
+
+                            $.each(data['answers'],function(index,value){ 
+                                
+                                myvar =  '<p style="border:1px solid green">' + value['answer'] + '</p>'
+                                    $('#answerTable').prepend(myvar)
+                                
+                            });
+						},
+						error: function(err){
+							alert("ERROR OCCURED WHILE PUTTING USER " + err)
+						}
+					})
+				})
+
+                $(document).on("contextmenu",function(){
+                return false;
+                }); 
+                
+
+                $(document).bind('keydown', function(e) {
+                    if(e.ctrlKey && (e.which == 80)) {
+                    e.preventDefault();
+                    return false;
+                    }
+                });
+
+
+                $(document).bind('keydown', function(e) {
+                    if(e.ctrlKey && (e.which == 83)) {
+                    e.preventDefault();
+                    return false;
+                    }
+                });
+                document.onkeydown = function(e) {
+                    if(event.keyCode == 123) {
+                    return false;
+                    }
+                    if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)){
+                    return false;
+                    }
+                    if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)){
+                    return false;
+                    }
+                    if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)){
+                    return false;
+                    }
+                }
+
         
         })
 				
