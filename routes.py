@@ -15,7 +15,6 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] ='ktube110329@gmail.com'
 app.config['MAIL_PASSWORD']= '@12345678kn'
-#app.config.update(dict(DEBUG=True, MAIL_SERVER = 'smtp.gmail.com',MAIL_PORT = 587,MAIL_USE_TLS = True,MAIL_USE_SSL = False,MAIL_USERNAME = 'bluekevin61@gmail.com',MAIL_PASSWORD = 'QWERTYUIO'))
 mail = Mail(app)
 bp = Blueprint('routes', __name__, template_folder='templates')
 
@@ -48,14 +47,13 @@ def adduser():
 		email = jss['email']
 		password = jss['password']
 		key = 'keykey1212'
-		
-		user = 	{ 	'username': name, 
+		user = 	{ 	
+					'username': name, 
 					'email': email, 
 					'password': password, 
 					'verified': 'no',
 					'reputation': 1
 				}
-
 		userTable.insert(user)
 		msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[email])
 		msg.body = 'validation key:<' + key +'>'
@@ -88,17 +86,17 @@ def login():
 	elif request.method == 'POST':
 		jss =request.json
 		print("=========================LOGIN POST===============================")
-		print("POST LOGIN JSON" , jss)
 		get_user = userTable.find_one( { 'username': str(jss['username']) } )
-		if get_user == None:
+		print("Get user ",get_user)
+		if( get_user == None):
 			return responseOK({'status': 'error'})
-		
+			
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
 			session.clear()
 			session['user'] = jss['username']
 			return responseOK({'status': 'OK'})
 		else:
-			return responseOK({'status': 'not verified and not password'})
+			return responseOK({'status': 'error'})
 	
 
 

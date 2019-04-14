@@ -58,7 +58,14 @@
 						dataType:"json",
 						data: JSON.stringify(data),
 						success: function (data){
-							window.location.href='/searchOK'
+							stat = data['status'].toString()
+              
+							if(stat== "error"){
+									alert("Incorrect username and password/Verify before logging in")
+									window.location.href='/login'
+							}else{
+								window.location.href='/searchOK'
+							}
 						},
 						error: function(err){
 							alert("Error logging in " + err)

@@ -1,8 +1,7 @@
 from flask import Flask
-from routes import bp, app
 import pymongo
 from flask_cors import CORS
-
+from routes import bp, app
 
 CORS(app)
 app.register_blueprint(bp)
