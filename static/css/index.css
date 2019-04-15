@@ -33,23 +33,10 @@
     font-weight: 600;
     text-decoration: none;
 }
-
-/* html, body {
-    text-align: center;
-    padding-top: 40px;
-    
-    -webkit-perspective: 700px;
-       -moz-perspective: 700px;
-        -ms-perspective: 700px;
-            perspective: 700px;
-  } */
-  
-  /* Reset */
-
   .container1{
     margin-left: auto;
     margin-right: auto;
-    background-image: linear-gradient(purple, pink);
+    background-image: linear-gradient( #10abff, #1beabd);
   }
 
   button {
@@ -103,3 +90,13 @@
     background: rgba( 20, 224, 133, 1 );
   }
 
+
+  .input {
+	position:relative;
+	font-size: 1.5em;
+	background: linear-gradient(21deg, #10abff, #1beabd);
+	padding: 3px;
+	display: inline-block;
+	border-radius: 10px;
+	opacity: .8;
+}

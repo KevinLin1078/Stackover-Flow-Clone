@@ -152,14 +152,11 @@ def getUserAnnswer(getName):
 		result = userTable.find_one({'username':username})
 		if result == None:
 			return responseOK({'status': 'error'})
-		
 		allAnswers = answerTable.find({ 'username': username } )
-		
 		answerReturn = {'status':'OK', 'answers': [] }
 
 		for result in allAnswers:
 			answerReturn['answers'].append(str(result['aid']))
-		
 		return responseOK(answerReturn)
 
 
@@ -293,17 +290,17 @@ def getQuestion(IDD):
 		print("=========================QUESTION/ID====DELETE===============================")
 		if len(session) == 0:
 			print("CANT DELETE USER NOT LOGGED IN")
-			return responseNO({'status':'error'})
+			return responseNO({'status':'error', 'error': 'user not logged in'})
 		else:
 			result = questionTable.find_one({'pid':pid})
 			if( result == None):
 				print('FAILED DELTED, invalid QUESTIONS ID')
-				return responseNO({'status':'error'})
+				return responseNO({'status':'error','error':'Question does not exist'})
 
 			username = result['user']['username']
 			if session['user'] != username:
 				print('FAILED DELTED, user is not original')
-				return responseNO({'status':'error'})
+				return responseNO({'status':'error', 'error': 'Not orginal user'})
 			else:
 				print('SUCCESSFULLY DELTED, user is original')
 				pid = int(pid)
@@ -373,8 +370,34 @@ def getAnswers(IDD):
 
 @app.template_filter('ctime')
 def timectime(s):
-	
 	return str(time.ctime(s))[3:19] # datetime.datetime.fromtimestamp(s)
+
+
+
+@bp.route('/questions/<IDD>/upvote', methods=['POST'])
+def upvoteQuestion(IDD):
+	if request.method == 'POST':
+		pid = int(IDD)
+		print('===========================/questions/<IDD>/upvote===================================')
+		if len(session) == 0:
+			return responseOK({'status': 'error','error': 'Please login to upvote'})
+		upvote = request.json['upvote']
+
+		if upvote == True:
+			result = questionTable.find_one({'pid':pid})
+			score = result['score'] + 1
+			questionTable.update_one({'pid': pid}, {"$set": {"score": score }} )
+			
+			username = result['username']
+
+
+
+
+
+
+
+
+
 
 
 
@@ -435,6 +458,7 @@ def search():
 		else:
 			answer = filter_with_query(query, timestamp, limit)
 			return responseOK(answer)
+
 
 def responseOK(stat):
 	data = stat

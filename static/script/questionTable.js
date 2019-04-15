@@ -67,71 +67,68 @@ function(e) {
        }
    )
    $("a.kevin").click( //clickes on question
-function() {
-       var key = $(this).attr("id")
+   function() {
+         var key = $(this).attr("id")
        
-  $.ajax({
-     url: '/questions/' + key.toString(),
-     type: 'GET',
-           dataType:"html",
-     success: function (data){
-               var data = JSON.parse(data);
-               $('#realQuestionID').text(key)
-               $('#question_title').text(data['question']['title'])
-               $('#question_body').text(data['question']['body'])
-               $('#actual_body').show()
-               $('#dev-table').hide()
-               $('#searchMe').hide()
-               
-               var myNode = document.getElementById("answerTable");
-               var fc = myNode.children[0];
-               while( fc ) {
-                   myNode.removeChild( fc );
-                   fc = myNode.firstChild;
-               }
+         $.ajax({
+            url: '/questions/' + key.toString(),
+            type: 'GET',
+                  dataType:"html",
+            success: function (data){
+                        var data = JSON.parse(data);
+                        $('#realQuestionID').text(key)
+                        $('#question_title').text(data['question']['title'])
+                        $('#question_body').text(data['question']['body'])
+                        $('#actual_body').show()
+                        $('#dev-table').hide()
+                        $('#searchMe').hide()
+                        
+                        var myNode = document.getElementById("answerTable");
+                        var fc = myNode.children[0];
+                        while( fc ) {
+                           myNode.removeChild( fc );
+                           fc = myNode.firstChild;
+                        }
 
-               $.each(data['answers'],function(index,value){ 
-                   
-                   myvar =  '<p style="border:1px solid green">' + value['answer'] + '</p>'
-                       $('#answerTable').prepend(myvar)
-                   
-               });
-     },
-     error: function(err){
-        alert("ERROR OCCURED WHILE PUTTING USER " + err)
-     }
-  })
+                        $.each(data['answers'],function(index,value){ 
+                           
+                           myvar =  '<p style="border:1px solid green" class="input">' + value['answer'] + '</p><br>'
+                              $('#answerTable').prepend(myvar)
+                           
+                        });
+            },
+            error: function(err){
+               alert("ERROR OCCURED WHILE PUTTING USER " + err)
+            }
+         })
 })
    //answer_submit
    $("#answer_submit").click( //clickes on question
-function() {
-       var body = $('#textarea').val()
+   function() {
+      var body = $('#textarea').val()
        
-  $.ajax({
-     url: '/questions/' + $('#realQuestionID').text() + '/answers/add',
-     type: 'POST',
-           contentType:"application/json",
-     dataType:"json",
-     data: JSON.stringify({'body': body }),
-     success: function (data){
-               stat = data['status'].toString()
-              
-               if(stat== "error"){
-                   alert("Please Login to Answer Questions")
-               }else{
-
-
-
-                   myvar = '<p style="border:1px solid green">' + body + '</p>'
-                   $('#answerTable').prepend(myvar)
-                   $('#textarea').val("")
-                   alert("Answer Added")
-               }
-     },
-     error: function(err){
-        alert("ERROR OCCURED WHILE PUTTING USER " + err)
-     }
-  })
+      $.ajax({
+         url: '/questions/' + $('#realQuestionID').text() + '/answers/add',
+         type: 'POST',
+               contentType:"application/json",
+         dataType:"json",
+         data: JSON.stringify({'body': body }),
+         success: function (data){
+                     stat = data['status'].toString()
+                  
+                     if(stat== "error"){
+                        alert("Please Login to Answer Questions")
+                     }else{
+                        myvar = '<p class="input" style="border:1px solid green">' + body + '</p><br>'
+                        $('#answerTable').prepend(myvar)
+                        $('#textarea').val("")
+                        alert("Answer Added")
+                     }
+         },
+         error: function(err){
+            alert("ERROR OCCURED WHILE PUTTING USER " + err)
+         }
+      })
 })
 
 
@@ -159,7 +156,7 @@ function() {
                    fc = myNode.firstChild;
                }
                $.each(data['answers'],function(index,value){ 
-                   myvar =  '<p style="border:1px solid green">' + value['answer'] + '</p>'
+                   myvar =  '<p class="input" style="border:1px solid green">' + value['answer'] + '</p><br>'
                        $('#answerTable').prepend(myvar)
                });
      },
