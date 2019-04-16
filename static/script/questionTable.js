@@ -66,42 +66,7 @@ function(e) {
            $('#searchMe').show()
        }
    )
-   $("a.kevin").click( //clickes on question
-   function() {
-         var key = $(this).attr("id")
-         alert(key)
-         $.ajax({
-            url: '/questions/' + key.toString(),
-            type: 'GET',
-            dataType:"html",
-            success: function (data){
-                        var data = JSON.parse(data);
-                        $('#realQuestionID').text(key)
-                        $('#question_title').text(data['question']['title'])
-                        $('#question_body').text(data['question']['body'])
-                        $('#actual_body').show()
-                        $('#dev-table').hide()
-                        $('#searchMe').hide()
-                        
-                        var myNode = document.getElementById("answerTable");
-                        var fc = myNode.children[0];
-                        while( fc ) {
-                           myNode.removeChild( fc );
-                           fc = myNode.firstChild;
-                        }
-
-                        $.each(data['answers'],function(index,value){ 
-                           
-                           myvar =  '<p style="border:1px solid green" class="input">' + value['answer'] + '</p><br>'
-                              $('#answerTable').prepend(myvar)
-                           
-                        });
-            },
-            error: function(err){
-               alert("ERROR OCCURED WHILE GETTING Question ID1 " + err)
-            }
-         })
-})
+   
    //answer_submit
    $("#answer_submit").click( //clickes on question
    function() {
@@ -135,11 +100,10 @@ function(e) {
    $(document).on( 'click', 'a.kevin',//clickes on question
 function() {
        var key = $(this).attr("id")
-       alert(key)
       $.ajax({
          url: '/questions/' + key.toString(),
          type: 'GET',
-               dataType:"html",
+         dataType:"html",
          success: function (data){
                      var data = JSON.parse(data);
                      $('#realQuestionID').text(key)

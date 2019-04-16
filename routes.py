@@ -370,7 +370,6 @@ def timectime(s):
 	return str(time.ctime(s))[3:19] # datetime.datetime.fromtimestamp(s)
 
 
-
 # @bp.route('/questions/<IDD>/upvote', methods=['POST'])
 # def upvoteQuestion(IDD):
 # 	if request.method == 'POST':
@@ -386,17 +385,6 @@ def timectime(s):
 # 			questionTable.update_one({'pid': pid}, {"$set": {"score": score }} )
 			
 # 			username = result['username']
-
-
-
-
-
-
-
-
-
-
-
 
 @bp.route('/searchOK', methods=['GET'])
 def searchOK():

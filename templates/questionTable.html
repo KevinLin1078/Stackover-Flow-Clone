@@ -52,10 +52,11 @@
                                     </tr>
                                 </thead>
                                 <tbody id='queryInfo'>
-                                    
+                                    {% set count = namespace(a=1) %}
                                     {% for item in questionTable %}
                                     <tr >
-                                        <th>{{item['_id']}}</th>
+                                        <th>{{count.a}}</th>
+                                        {% set count.a = count.a + 1 %}
                                         <th onmouseover='' style='cursor: pointer'><a class='kevin' id="{{item['_id']}}">{{item['title']}} </a></th>
                                         <th>{{item['user']['username']}}</th>
                                         <th>{{item['timestamp'] | ctime}}</th>                                       
