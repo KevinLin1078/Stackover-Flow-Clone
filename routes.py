@@ -6,6 +6,7 @@ from flask_mail import Message
 import pymongo 
 from pymongo import MongoClient
 import time
+from bson.objectid import ObjectId
 app = Flask(__name__)
 client = MongoClient()
 
@@ -172,9 +173,6 @@ def addQuestion():
 			return responseOK({'status': 'ERROR', 'error': 'Wrong user session'})
 		print("JSON ALMOST: ", request.json)
 		
-		
-		pid = pidTable.find_one({'pid':'pid'})['id']
-		pidTable.update_one({'pid':'pid'}, {"$set": {"id": pid+1 }} )
 		title = None
 		body = None
 		tags = None
@@ -187,11 +185,10 @@ def addQuestion():
 		else:
 			return responseOK({'status': 'ERROR', 'error': 'Json key doesnt exist'})
 		
-		secret.insert({'ip': request.remote_addr,'pid': pid, 'question': title})
+		secret.insert({'ip': request.remote_addr, 'question': title})
 		
 		username = session['user']
 		question =	{
-									'pid' : pid,         # id of question
 									'user': {	'username': str(username),
 														'reputation': 1
 													},
@@ -207,17 +204,20 @@ def addQuestion():
 									'username': str(username),
 									'realIP': request.remote_addr
 								}
+		pid = questionTable.insert(question)
 		pid = str(pid)
-		questionTable.insert(question)
+		
 		return responseOK({ 'status': 'OK', 'id':pid}) 
 
 @bp.route('/questions/<IDD>', methods=[ "GET", 'DELETE'])
 def getQuestion(IDD):
-	pid = int(IDD)
+	pid = ObjectId(str(IDD))
 	if request.method == 'GET':
 		print("=========================QUESTION/ID====GET===============================")
 		print("ID IS: ", pid)
-		result = questionTable.find_one({'pid':pid})
+
+		result = questionTable.find_one({"_id": pid})
+
 		if( result == None):
 			print("QUESTION ID DOESNT EXIST")
 			print(request.remote_addr)
@@ -243,8 +243,8 @@ def getQuestion(IDD):
 				print('USER IS LOGGED IN AND USER EXISTS IN IPDB', ip)
 		
 		count = result['view_count']
-		questionTable.update_one({'pid':pid}, { "$set": {'view_count': count + plus}} )
-		result = questionTable.find_one({'pid':pid})
+		questionTable.update_one({'_id':pid}, { "$set": {'view_count': count + plus}} )
+		result = questionTable.find_one({'_id':pid})
 
 		score = result['score']
 		view_count = result['view_count']
@@ -253,7 +253,7 @@ def getQuestion(IDD):
 		tags = result['tags']
 		title = result['title']
 		body = result['body']
-		pid = str(result['pid'])
+		pid = str(result['_id'])
 		timestamp = result['timestamp']
 		user = result['user']
 		question = 	{ 	'status':'OK',
@@ -273,15 +273,13 @@ def getQuestion(IDD):
 							"answers":[]
 						}
 		'''THIS PART IS FOR HTML'''
-		pid = int(IDD)
-		allAnswers = answerTable.find({'pid': pid})
+		
+		allAnswers = answerTable.find({'pid': ObjectId(pid)})
 		for result in allAnswers:
 			temp =	{
-						'id': str(result['aid']),
 						'user': result['user'],
 						'answer': result['body']
 					}
-
 			question['answers'].append(temp)
 		'''This Part Needs to be deleted'''
 		return responseOK(question)
@@ -292,7 +290,8 @@ def getQuestion(IDD):
 			print("CANT DELETE USER NOT LOGGED IN")
 			return responseNO({'status':'error', 'error': 'user not logged in'})
 		else:
-			result = questionTable.find_one({'pid':pid})
+			pid = ObjectId(str(IDD))
+			result = questionTable.find_one({'_id':pid})
 			if( result == None):
 				print('FAILED DELTED, invalid QUESTIONS ID')
 				return responseNO({'status':'error','error':'Question does not exist'})
@@ -303,8 +302,8 @@ def getQuestion(IDD):
 				return responseNO({'status':'error', 'error': 'Not orginal user'})
 			else:
 				print('SUCCESSFULLY DELTED, user is original')
-				pid = int(pid)
-				questionTable.delete_one({'pid': pid})
+				
+				questionTable.delete_one({'_id': pid})
 				answerTable.delete_one({'pid': pid})
 				ipTable.delete_many({'pid': pid})
 				return responseOK({'status': 'OK'})
@@ -315,7 +314,7 @@ def addAnswer(IDD):
 	if request.method == 'POST':
 		if len(session) == 0:
 			return responseOK({'status': 'error','error': 'not logged in'})
-		pid = int(IDD)
+		pid = ObjectId(str(IDD))
 		body = request.json['body']
 		media = None
 		print('================--===========/questions/<IDD>/answers/add===============--====================')
@@ -327,13 +326,10 @@ def addAnswer(IDD):
 		userID = userTable.find_one({'username': session['user']})['_id']
 		userID = str(userID)
 		
-		aid = aidTable.find_one({'aid':'aid'})['id']
-		aidTable.update_one({'aid': 'aid'}, {"$set": {"id": aid+1 }} )
 		answer = 	{
 					'pid': pid,
 					'body':body,
 					'media': media,
-					'aid': aid,
 					'user': session['user'],
 					'userID':  userID,
 					'timestamp': (time.time()),
@@ -341,20 +337,21 @@ def addAnswer(IDD):
 					'score' : 0,
 					'username': session['user']
 					}
-		answerTable.insert(answer)
+		aid = answerTable.insert(answer)
+		aid = str(aid)
 		return responseOK({'status': 'OK', 'id': str(aid)})
 
 @bp.route('/questions/<IDD>/answers', methods=['GET'])
 def getAnswers(IDD):
 	if request.method == 'GET':
 		print('================--===========/questions/<IDD>/answers===============--====================')
-		pid = int(IDD)
+		pid = ObjectId(str(IDD))
 		allAnswers = answerTable.find({'pid': pid})
 		answerReturn = {"status":"OK", 'answers': []}
 
 		for result in allAnswers:
 			temp =	{
-						'id': str(result['aid']),
+						'id': str(result['_id']),
 						'user': result['user'],
 						'body': result['body'],
 						'score': result['score'],
@@ -374,21 +371,21 @@ def timectime(s):
 
 
 
-@bp.route('/questions/<IDD>/upvote', methods=['POST'])
-def upvoteQuestion(IDD):
-	if request.method == 'POST':
-		pid = int(IDD)
-		print('===========================/questions/<IDD>/upvote===================================')
-		if len(session) == 0:
-			return responseOK({'status': 'error','error': 'Please login to upvote'})
-		upvote = request.json['upvote']
+# @bp.route('/questions/<IDD>/upvote', methods=['POST'])
+# def upvoteQuestion(IDD):
+# 	if request.method == 'POST':
+# 		pid = int(IDD)
+# 		print('===========================/questions/<IDD>/upvote===================================')
+# 		if len(session) == 0:
+# 			return responseOK({'status': 'error','error': 'Please login to upvote'})
+# 		upvote = request.json['upvote']
 
-		if upvote == True:
-			result = questionTable.find_one({'pid':pid})
-			score = result['score'] + 1
-			questionTable.update_one({'pid': pid}, {"$set": {"score": score }} )
+# 		if upvote == True:
+# 			result = questionTable.find_one({'pid':pid})
+# 			score = result['score'] + 1
+# 			questionTable.update_one({'pid': pid}, {"$set": {"score": score }} )
 			
-			username = result['username']
+# 			username = result['username']
 
 
 
@@ -412,7 +409,7 @@ def searchOK():
 			login = 1
 		return render_template('questionTable.html', questionTable=result, login= login)
 
-@bp.route('/search', methods=['GET', 'POST','PUT'])
+@bp.route('/search', methods=['GET', 'POST'])
 def search():
 	if request.method == 'GET':
 		result = questionTable.find()
@@ -422,10 +419,6 @@ def search():
 		else:
 			login = 1
 		return render_template('questionTable.html', questionTable=result, login= login)
-	if request.method == 'PUT':
-		result = questionTable.find()
-		return render_template('questionTable.html', questionTable=result)
-
 	if request.method == 'POST':
 		print('--------------------------------Search-----------------------------')
 		timestamp = time.time()
@@ -510,7 +503,7 @@ def filter_with_query(query, timestamp, limit):
 			break;
 		if q['timestamp'] <= timestamp:
 			temp = {
-							'id': str(q['pid']),
+							'id': str(q['_id']),
 							'title':q['title'],
 							'body': q['body'],
 							'tags': q['tags'],
@@ -543,7 +536,7 @@ def filter_without_query(timestamp, limit):
 		if(count == limit ):
 			break;
 		temp = {
-					'id': str(q['pid']),
+					'id': str(q['_id']),
 					'title':q['title'],
 					'body': q['body'],
 					'tags': q['tags'],

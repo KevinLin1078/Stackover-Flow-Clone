@@ -55,8 +55,8 @@
                                     
                                     {% for item in questionTable %}
                                     <tr >
-                                        <th>{{item['pid']}}</th>
-                                        <th onmouseover='' style='cursor: pointer'><a class='kevin' id="{{item['pid']}}">{{item['title']}} </a></th>
+                                        <th>{{item['_id']}}</th>
+                                        <th onmouseover='' style='cursor: pointer'><a class='kevin' id="{{item['_id']}}">{{item['title']}} </a></th>
                                         <th>{{item['user']['username']}}</th>
                                         <th>{{item['timestamp'] | ctime}}</th>                                       
                                     </tr> 

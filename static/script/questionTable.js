@@ -69,11 +69,11 @@ function(e) {
    $("a.kevin").click( //clickes on question
    function() {
          var key = $(this).attr("id")
-       
+         alert(key)
          $.ajax({
             url: '/questions/' + key.toString(),
             type: 'GET',
-                  dataType:"html",
+            dataType:"html",
             success: function (data){
                         var data = JSON.parse(data);
                         $('#realQuestionID').text(key)
@@ -98,7 +98,7 @@ function(e) {
                         });
             },
             error: function(err){
-               alert("ERROR OCCURED WHILE PUTTING USER " + err)
+               alert("ERROR OCCURED WHILE GETTING Question ID1 " + err)
             }
          })
 })
@@ -135,35 +135,35 @@ function(e) {
    $(document).on( 'click', 'a.kevin',//clickes on question
 function() {
        var key = $(this).attr("id")
-       
-  $.ajax({
-     url: '/questions/' + key.toString(),
-     type: 'GET',
-           dataType:"html",
-     success: function (data){
-               var data = JSON.parse(data);
-               $('#realQuestionID').text(key)
-               $('#question_title').text(data['question']['title'])
-               $('#question_body').text(data['question']['body'])
-               $('#actual_body').show()
-               $('#dev-table').hide()
-               $('#searchMe').hide()
-               
-               var myNode = document.getElementById("answerTable");
-               var fc = myNode.children[0];
-               while( fc ) {
-                   myNode.removeChild( fc );
-                   fc = myNode.firstChild;
-               }
-               $.each(data['answers'],function(index,value){ 
-                   myvar =  '<p class="input" style="border:1px solid green">' + value['answer'] + '</p><br>'
-                       $('#answerTable').prepend(myvar)
-               });
-     },
-     error: function(err){
-        alert("ERROR OCCURED WHILE PUTTING USER " + err)
-     }
-  })
+       alert(key)
+      $.ajax({
+         url: '/questions/' + key.toString(),
+         type: 'GET',
+               dataType:"html",
+         success: function (data){
+                     var data = JSON.parse(data);
+                     $('#realQuestionID').text(key)
+                     $('#question_title').text(data['question']['title'])
+                     $('#question_body').text(data['question']['body'])
+                     $('#actual_body').show()
+                     $('#dev-table').hide()
+                     $('#searchMe').hide()
+                     
+                     var myNode = document.getElementById("answerTable");
+                     var fc = myNode.children[0];
+                     while( fc ) {
+                        myNode.removeChild( fc );
+                        fc = myNode.firstChild;
+                     }
+                     $.each(data['answers'],function(index,value){ 
+                        myvar =  '<p class="input" style="border:1px solid green">' + value['answer'] + '</p><br>'
+                           $('#answerTable').prepend(myvar)
+                     });
+         },
+         error: function(err){
+            alert("ERROR OCCURED WHILE PUTTING USER GETTING Question ID2" + err)
+         }
+      })
 })
 
    $(document).on("contextmenu",function(){

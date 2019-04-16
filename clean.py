@@ -56,8 +56,6 @@ ipTable.delete_many({})
 questionIndex.delete_many({})
 answerIndex.delete_many({})
 
-
-
 print('UPDATED DATA')
 
 
