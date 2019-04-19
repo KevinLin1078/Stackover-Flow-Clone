@@ -97,7 +97,8 @@ function(e) {
 })
 
 
-   $(document).on( 'click', 'a.kevin',//clickes on question
+
+   $(document).on( 'click', 'a.kevin',
 function() {
        var key = $(this).attr("id")
       $.ajax({
@@ -107,8 +108,8 @@ function() {
          success: function (data){
                      var data = JSON.parse(data);
                      $('#realQuestionID').text(key)
-                     $('#question_title').text(data['question']['title'])
-                     $('#question_body').text(data['question']['body'])
+                     $('#question_title').html(data['question']['title'])
+                     $('#question_body').html(data['question']['body'])
                      $('#actual_body').show()
                      $('#dev-table').hide()
                      $('#searchMe').hide()

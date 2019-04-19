@@ -45,7 +45,7 @@
 									'email': $('#email').val(),
 									'key': $('#key').val()
 								}
-								alert(data.email + " " +data.key)
+								
 						$.ajax({
 							url: '/verify',
 							type: 'POST',
@@ -53,7 +53,7 @@
 							dataType:"json",
 							data: JSON.stringify(data),
 							success: function (data){
-								alert("User is VERIFIED " + data['status'] )
+								
 								window.location.href='/login'
 							},
 							error: function(err){
