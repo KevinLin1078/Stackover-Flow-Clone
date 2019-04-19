@@ -229,34 +229,59 @@ def getAnswers(IDD):
 
 		return responseOK(answerReturn)
 
-# @bp.route('/questions/<IDD>/upvote', methods=['POST'])
-# def upvoteQuestion(IDD):
-# 	if request.method == 'POST':
-# 		pid = str(IDD)
-# 		print('===========================/questions/<IDD>/upvote===================================')
-# 		if len(session) == 0:
-# 			return responseOK({'status': 'error','error': 'Please login to upvote'})
-# 		upvote = request.json['upvote']
-# 		user = session['user']
-# 		if upvote == True:
-# 			result = upvoteTable.find_one({'username' : user, 'pid': pid} )
-# 			if result == None:
-# 				upvoteTable.insert({'username': user, 'pid': pid, 'vote': 1})
-# 				#plus one to question
-# 				question = questionTable.find_one( {'_id': ObjectId(pid)} )
-# 				new_score = question['score'] + 1
-# 				questionTable.update_one( {'_id': ObjectId(pid)} , { "$set": {'score': new_score} } )
-# 				#plus one to user reputation
-# 				user_filter = userTable.find_one()
+@bp.route('/questions/<IDD>/upvote', methods=['POST'])
+def upvoteQuestion(IDD):
+	if request.method == 'POST':
+		pid = str(IDD)
+		print('===========================/questions/<IDD>/upvote===================================')
+		if len(session) == 0:
+			return responseOK({'status': 'error','error': 'Please login to upvote'})
+		upvote = request.json['upvote']
+		user = session['user']
+		result = upvoteTable.find_one({'username' : user, 'pid': pid} )
+		if upvote == True:
+			if result == None:
+				upvoteTable.insert({'username': user, 'pid': pid, 'vote': 1})
+				updateScore(pid, user, 1)
+			elif result['vote'] ==  1:
+				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )
+				update_score(pid, user, -1)	
+			elif result['vote'] ==  0:
+				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
+				update_score(pid, user, 1)
+			elif result['vote'] == -1:
+				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
+				update_score(pid, user, 2)
+		#################################################FALSE##########################################
+		if upvote == False:
+			if result == None:
+				upvoteTable.insert({'username': user, 'pid': pid, 'vote': -1})
+				updateScore(pid, user, -1)
 
-# 			elif result['vote']== 1:
-# 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )
-# 				#minus one from question
-# 				#minus one from reputation
-# 			elif result['vote'] ==
-# 		elif upvote == False:
+			elif result['vote'] ==  -1:
+				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )
+				update_score(pid, user, 1)	
+			
+			elif result['vote'] ==  0:
+				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': -1} } )
+				update_score(pid, user, -1)
 
+			elif result['vote'] == 1:
+				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
+				update_score(pid, user, -2)
+			
 
+def update_score(pid, user, val):
+	question = questionTable.find_one( {'_id': ObjectId(pid)} )
+	new_score = question['score'] + val							#plus one to question
+	questionTable.update_one( {'_id': ObjectId(pid)} , { "$set": {'score': new_score} } )
+	
+	user_filter = userTable.find_one({'username': user})	#plus one to user reputation
+	new_rep = user_filter['reputation']
+	if new_rep == 1 and val < 0:
+		pass
+	else:
+		userTable.update_one({'username': user}, { "$set": {'reputation': new_rep + val} } )
 
 @bp.route('/searchOK', methods=['GET'])
 def searchOK():
