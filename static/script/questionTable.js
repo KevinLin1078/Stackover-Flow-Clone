@@ -1,26 +1,39 @@
 $(document).ready(function(){
-                
+   
+
+   $("#goodQ").click( function(e) {
+      upvoteQuestion(true)
+      key = $('#realQuestionID').text()
+      getQuestion(key)
+
+   })   
+   $("#badQ").click(function(e) {
+      upvoteQuestion(false)
+      key = $('#realQuestionID').text()
+      getQuestion(key)
+   })  
+   
    $("#logout").click( 
-function(e) {
-  $.ajax({
-     url: '/logout',
-     type: 'POST',
-     contentType:"application/json",
-     dataType:"json",
-     data: JSON.stringify({}),
-     success: function (data){
-        
-        window.location.href='/login'
-     },
-     error: function(err){
-        alert("ERROR OCCURED WHILE ADDING USER " + err)
-     }
-  })
-})
+      function(e) {
+      $.ajax({
+         url: '/logout',
+         type: 'POST',
+         contentType:"application/json",
+         dataType:"json",
+         data: JSON.stringify({}),
+         success: function (data){
+            
+            window.location.href='/login'
+         },
+         error: function(err){
+            alert("ERROR OCCURED WHILE ADDING USER " + err)
+         }
+      })
+   })
    
    $("#clickme").click( 
-function(e) {
-  $.ajax({
+   function(e) {
+   $.ajax({
      url: '/search',
      type: 'POST',
      contentType:"application/json",
@@ -87,7 +100,6 @@ function(e) {
                         myvar = '<p class="input" style="border:1px solid green">' + body + '</p><br>'
                         $('#answerTable').prepend(myvar)
                         $('#textarea').val("")
-                        alert("Answer Added")
                      }
          },
          error: function(err){
@@ -96,40 +108,16 @@ function(e) {
       })
 })
 
+   $(document).on( 'click', 'a.kevin', function() {
+      var key = $(this).attr("id")
+      getQuestion(key)
+   })
+   
 
-
-   $(document).on( 'click', 'a.kevin',
-function() {
-       var key = $(this).attr("id")
-      $.ajax({
-         url: '/questions/' + key.toString(),
-         type: 'GET',
-         dataType:"html",
-         success: function (data){
-                     var data = JSON.parse(data);
-                     $('#realQuestionID').text(key)
-                     $('#question_title').html(data['question']['title'])
-                     $('#question_body').html(data['question']['body'])
-                     $('#actual_body').show()
-                     $('#dev-table').hide()
-                     $('#searchMe').hide()
-                     
-                     var myNode = document.getElementById("answerTable");
-                     var fc = myNode.children[0];
-                     while( fc ) {
-                        myNode.removeChild( fc );
-                        fc = myNode.firstChild;
-                     }
-                     $.each(data['answers'],function(index,value){ 
-                        myvar =  '<p class="input" style="border:1px solid green">' + value['answer'] + '</p><br>'
-                           $('#answerTable').prepend(myvar)
-                     });
-         },
-         error: function(err){
-            alert("ERROR OCCURED WHILE PUTTING USER GETTING Question ID2" + err)
-         }
-      })
-})
+   $('#showAnswer').hover( function() {
+      showAnswer()
+   })
+   
 
    $(document).on("contextmenu",function(){
    return false;
@@ -164,6 +152,87 @@ function() {
        return false;
        }
    }
-
-
 })
+
+////////////////////////////////////////////////////////FUNCTIONS///////////////////////////////////
+
+function upvoteQuestion(bool){
+   me = $('#realQuestionID').text()
+      $.ajax({
+         url: '/questions/' + $('#realQuestionID').text() + '/upvote',
+         type: 'POST',
+         contentType:"application/json",
+         dataType:"json",
+         data: JSON.stringify({'upvote': bool}),
+         success: function (data){
+            stat = data['status'].toString()
+            if( stat == 'error'){
+               alert('Please login to upvote/downvote')
+            }
+            
+
+         },
+         error: function(err){
+            alert("ERROR OCCURED WHILE ADDING USER " + err)
+         }
+      })
+}
+
+function showAnswer(){
+   var key = $('#realQuestionID').text()
+   $.ajax({
+      url: '/questions/' + key.toString() +'/answers',
+      type: 'GET',
+      dataType:"html",
+      success: function (data){
+                  var data = JSON.parse(data);
+                  $('#showAnswer').hide()
+                  $('#textarea').show()
+                  $('#answer_submit').show()
+                  var myNode = document.getElementById("answerTable");
+                  var fc = myNode.children[0];
+                  while( fc ) {
+                     myNode.removeChild( fc );
+                     fc = myNode.firstChild;
+                  }
+                  
+                  $.each(data['answers'],function(index,value){ 
+                     myvar =  '<p class="input" style="border:1px solid green">' + value['body'] + '</p><br>'
+                        $('#answerTable').prepend(myvar)
+                  });
+      },
+      error: function(err){
+         alert("ERROR OCCURED WHILE PUTTING USER GETTING Question ID2" + err)
+      }
+   })
+}
+
+function getQuestion(key){
+   $.ajax({
+      url: '/questions/' + key.toString(),
+      type: 'GET',
+      dataType:"html",
+      success: function (data){
+                  var data = JSON.parse(data);
+                  $('#realQuestionID').text(key) //hidden quention id 
+                  $('#question_title').html(data['question']['title'])
+                  $('#question_body').html(data['question']['body'])
+                  $('#actual_body').show()
+                  $('#dev-table').hide()
+                  $('#searchMe').hide()
+                  $('#textarea').hide()
+                  $('#answer_submit').hide()
+                  $('#showAnswer').show()
+                  $('#voteCount').text(data['question']['score'])
+                  var myNode = document.getElementById("answerTable");
+                  var fc = myNode.children[0];
+                  while( fc ) {
+                     myNode.removeChild( fc );
+                     fc = myNode.firstChild;
+                  }
+      },
+      error: function(err){
+         alert("ERROR OCCURED WHILE PUTTING USER GETTING Question ID2" + err)
+      }
+   })
+}

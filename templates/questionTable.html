@@ -1,5 +1,6 @@
 <html> 
     <head> 
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
         <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
         <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
@@ -74,21 +75,26 @@
                     
                 </div>
       
-       <div class='col-md-7' id='actual_body' style='display: none'>
-            <div   style='margin-left:20px;font-size: 20px; border-left:1px solid green; border-radius: 10px; height: auto; padding: 0px 10px;line-height: 40px; word-wrap: break-word;'>
+       <div class='col-md-12' id='actual_body' style='display: none'>
+            
+            <div style='margin-left:20px;font-size: 20px; border-left:1px solid green; border-radius: 10px; height: auto; padding: 0px 10px;line-height: 40px; word-wrap: break-word;'>
                 <button id='back_button' >Back</button>
                 <h2 style='display:none' id='realQuestionID' ></h2>
                 <h2 class="font-weight-bold" style="color:green;" id='question_title'> Place Title Here</h2>
                 <p id='question_body' style='color:black'>Place Body Here</p>                
-                
+                <i  id='goodQ' class="fa fa-thumbs-up"></i>
+                <span id='voteCount'style='font-size: 40px'> Nana </span>
+                <i  id='badQ' class="fa fa-thumbs-down"></i>
+
             </div>
             
             <textarea id='textarea' style='margin-left: 20px; width:700px; height:70px' ></textarea>
-            <button style='margin-left: 20px;font-size: 20px'id='answer_submit'>Answer</button>
-            
-            <div id='answerTable' style='margin-left: 20px; height: 80px; width:730px'>
+            <button style='margin-left: 20px;font-size: 20px'id='answer_submit'>Submit</button>
+            <button style='display:none;margin-left: 20px;' id='showAnswer'> See Answers</button>
+            <div id='answerTable' style='margin-left: 20px; height: 80px; width:730px'> 
                 
-               
+            
+            
             </div>
             
         </div>

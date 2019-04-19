@@ -100,3 +100,15 @@
 	border-radius: 10px;
 	opacity: .8;
 }
+
+.fa {
+  font-size: 50px;
+  cursor: pointer;
+  user-select: none;
+}
+#goodQ:hover{
+  color:green;
+}
+#badQ:hover{
+  color: red;
+}

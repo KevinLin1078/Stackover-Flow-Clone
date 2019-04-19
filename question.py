@@ -133,18 +133,8 @@ def getQuestion(IDD):
 									"id": pid,
 									"timestamp": timestamp,
 									"user": user
-									},
-							 "answers":[]
+									}
 						}
-		'''THIS PART IS FOR HTML'''		
-		allAnswers = answerTable.find({'pid': ObjectId(pid)})
-		for result in allAnswers:
-			temp =	{
-						'user': result['user'],
-						'answer': result['body']
-					}
-			question['answers'].append(temp)
-		'''This Part Needs to be deleted'''
 		return responseOK(question)
 
 	elif request.method == 'DELETE':
@@ -242,29 +232,30 @@ def upvoteQuestion(IDD):
 			if result == None:
 				upvoteTable.insert({'username': user, 'pid': pid, 'vote': 1})
 				updateScore(pid, user, 1)
+				
 			elif result['vote'] ==  1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )
-				update_score(pid, user, -1)	
+				updateScore(pid, user, -1)	
 			elif result['vote'] ==  0:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
-				update_score(pid, user, 1)
+				updateScore(pid, user, 1)
 			elif result['vote'] == -1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
-				update_score(pid, user, 2)
+				updateScore(pid, user, 2)
 		#################################################FALSE##########################################
 		elif upvote == False:
 			if result == None:
 				upvoteTable.insert({'username': user, 'pid': pid, 'vote': -1})
 				updateScore(pid, user, -1)
 			elif result['vote'] ==  -1:
-				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )
-				update_score(pid, user, 1)	
+				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )			
+				updateScore(pid, user, 1)	
 			elif result['vote'] ==  0:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': -1} } )
-				update_score(pid, user, -1)
+				updateScore(pid, user, -1)
 			elif result['vote'] == 1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': -1} } )
-				update_score(pid, user, -2)
+				updateScore(pid, user, -2)
 		return responseOK({'status': 'OK'})
 
 @bp.route('/questions/<IDD>/upvote', methods=['POST'])
@@ -345,7 +336,7 @@ def responseNO(stat):
 	respond = Response(jsonData,status=404, mimetype='application/json')
 	return respond
 
-def update_score(pid, user, val):
+def updateScore(pid, user, val):
 	question = questionTable.find_one( {'_id': ObjectId(pid)} )
 	new_score = question['score'] + val							#plus one to question
 	questionTable.update_one( {'_id': ObjectId(pid)} , { "$set": {'score': new_score} } )
