@@ -48,13 +48,13 @@ def addQuestion():
 			tags = request.json['tags']
 		else:
 			return responseOK({'status': 'ERROR', 'error': 'Json key doesnt exist'})
-		
-		secret.insert({'ip': request.remote_addr, 'question': title})
-		
+				
 		username = session['user']
+		user_filter = userTable.find_one({'username': username})
+		reputation = user_filter['reputation']
 		question =	{
 									'user': {	'username': str(username),
-														'reputation': 1
+														'reputation': reputation
 													},
 									'title': title, 
 									'body': body,
@@ -122,22 +122,21 @@ def getQuestion(IDD):
 		user = result['user']
 		question = 	{ 	'status':'OK',
 							"question": {
-											"score": score,
-											"view_count": view_count,
-											"answer_count": 0,
-											"media": None,
-											"tags": tags,
-											"accepted_answer_id": None,
-											"title": title,
-											"body": body,
-											"id": pid,
-											"timestamp": timestamp,
-											"user": user
-										},
+									"score": score,
+									"view_count": view_count,
+									"answer_count": 0,
+									"media": None,
+									"tags": tags,
+									"accepted_answer_id": None,
+									"title": title,
+									"body": body,
+									"id": pid,
+									"timestamp": timestamp,
+									"user": user
+									},
 							 "answers":[]
 						}
-		'''THIS PART IS FOR HTML'''
-		
+		'''THIS PART IS FOR HTML'''		
 		allAnswers = answerTable.find({'pid': ObjectId(pid)})
 		for result in allAnswers:
 			temp =	{
@@ -166,7 +165,6 @@ def getQuestion(IDD):
 				return responseNO({'status':'error', 'error': 'Not orginal user'})
 			else:
 				print('SUCCESSFULLY DELTED, user is original')
-				
 				questionTable.delete_one({'_id': pid})
 				answerTable.delete_one({'pid': pid})
 				ipTable.delete_many({'pid': pid})
@@ -235,7 +233,7 @@ def upvoteQuestion(IDD):
 		pid = str(IDD)
 		print('===========================/questions/<IDD>/upvote===================================')
 		if len(session) == 0:
-			return responseOK({'status': 'error','error': 'Please login to upvote'})
+			return responseOK({'status': 'error','error': 'Please login to upvote question'})
 		upvote = request.json['upvote']
 		user = session['user']
 		result = upvoteTable.find_one({'username' : user, 'pid': pid} )
@@ -254,7 +252,7 @@ def upvoteQuestion(IDD):
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
 				update_score(pid, user, 2)
 		#################################################FALSE##########################################
-		if upvote == False:
+		elif upvote == False:
 			if result == None:
 				upvoteTable.insert({'username': user, 'pid': pid, 'vote': -1})
 				updateScore(pid, user, -1)
@@ -267,18 +265,18 @@ def upvoteQuestion(IDD):
 			elif result['vote'] == 1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': -1} } )
 				update_score(pid, user, -2)
+		return responseOK({'status': 'OK'})
 
-def update_score(pid, user, val):
-	question = questionTable.find_one( {'_id': ObjectId(pid)} )
-	new_score = question['score'] + val							#plus one to question
-	questionTable.update_one( {'_id': ObjectId(pid)} , { "$set": {'score': new_score} } )
-	
-	user_filter = userTable.find_one({'username': user})	#plus one to user reputation
-	new_rep = user_filter['reputation']
-	if new_rep == 1 and val < 0:
-		pass
-	else:
-		userTable.update_one({'username': user}, { "$set": {'reputation': new_rep + val} } )
+@bp.route('/questions/<IDD>/upvote', methods=['POST'])
+def upvoteAnswer():
+	if request.method == 'POST':
+		pid = str(IDD)
+		print('===========================/questions/<IDD>/upvote===================================')
+		if len(session) == 0:
+			return responseOK({'status': 'error','error': 'Please login to upvote answer'})
+		upvote = request.json['upvote']
+
+
 
 @bp.route('/searchOK', methods=['GET'])
 def searchOK():
@@ -347,7 +345,17 @@ def responseNO(stat):
 	respond = Response(jsonData,status=404, mimetype='application/json')
 	return respond
 
-
+def update_score(pid, user, val):
+	question = questionTable.find_one( {'_id': ObjectId(pid)} )
+	new_score = question['score'] + val							#plus one to question
+	questionTable.update_one( {'_id': ObjectId(pid)} , { "$set": {'score': new_score} } )
+	
+	user_filter = userTable.find_one({'username': user})	#plus one to user reputation
+	new_rep = user_filter['reputation']
+	if new_rep == 1 and val < 0:
+		pass
+	else:
+		userTable.update_one({'username': user}, { "$set": {'reputation': new_rep + val} } )
 
 def filter_with_query(query, timestamp, limit):
 	print("WITH QUERY")
