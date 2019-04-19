@@ -239,6 +239,7 @@ def upvoteQuestion(IDD):
 		upvote = request.json['upvote']
 		user = session['user']
 		result = upvoteTable.find_one({'username' : user, 'pid': pid} )
+		
 		if upvote == True:
 			if result == None:
 				upvoteTable.insert({'username': user, 'pid': pid, 'vote': 1})
@@ -257,19 +258,15 @@ def upvoteQuestion(IDD):
 			if result == None:
 				upvoteTable.insert({'username': user, 'pid': pid, 'vote': -1})
 				updateScore(pid, user, -1)
-
 			elif result['vote'] ==  -1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )
 				update_score(pid, user, 1)	
-			
 			elif result['vote'] ==  0:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': -1} } )
 				update_score(pid, user, -1)
-
 			elif result['vote'] == 1:
-				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
+				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': -1} } )
 				update_score(pid, user, -2)
-			
 
 def update_score(pid, user, val):
 	question = questionTable.find_one( {'_id': ObjectId(pid)} )
