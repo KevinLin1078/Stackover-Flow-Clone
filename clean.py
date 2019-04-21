@@ -9,32 +9,20 @@ def clearMe():
 
    userTable = db['user'] 
    answerTable = db['answer']
-   aidTable = db['answer_id']
    questionTable = db['question']
-   pidTable = db['pid']
    ipTable = db['ip']
-   questionIndex = db['questionIndex']
-   answerIndex = db['answerIndex']
    upvoteTable = db['upvote']
 
    userTable.drop()
    answerTable.drop()
-   answerTable.drop()
    questionTable.drop()
-   pidTable.drop()
-   ipTable.drop()
-   questionIndex.drop() 
-   answerIndex.drop()
+   ipTable.drop() 
    upvoteTable.drop()
 
    userTable = db['user'] 
    answerTable = db['answer']
    questionTable = db['question']
    ipTable = db['ip']
-   questionIndex = db['questionIndex']
-   answerIndex = db['answerIndex']
-   aidTable = db['answer_id']
-   pidTable = db['pid']
    upvoteTable = db['upvote']
 
 
@@ -42,18 +30,12 @@ def clearMe():
    answerTable.insert({})
    questionTable.insert({})
    ipTable.insert({})
-   questionIndex.insert({})
-   answerIndex.insert({})
    upvoteTable.insert({})
-   pidTable.insert({'pid':'pid', 'id': 1})
-   aidTable.insert({'aid':'aid', 'id': 1})
 
    userTable.delete_many({})
    answerTable.delete_many({})
    questionTable.delete_many({})
    ipTable.delete_many({})
-   questionIndex.delete_many({})
-   answerIndex.delete_many({})
    upvoteTable.delete_many({})
    print('UPDATED DATA')
 
