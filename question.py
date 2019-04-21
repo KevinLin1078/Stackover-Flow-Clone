@@ -10,6 +10,7 @@ from bson.objectid import ObjectId
 
 client = MongoClient()
 bp = Blueprint('question', __name__, template_folder='templates')
+
 db = client.stack
 userTable = db['user'] 
 answerTable = db['answer']
@@ -21,8 +22,6 @@ questionIndex = db['questionIndex']
 answerIndex = db['answerIndex']
 secret = db['secret']
 upvoteTable = db['upvote']
-
-
 
 
 @bp.route('/questions/add', methods=["POST", "GET"])
@@ -231,45 +230,74 @@ def upvoteQuestion(IDD):
 		if upvote == True:
 			if result == None:
 				upvoteTable.insert({'username': user, 'pid': pid, 'vote': 1})
-				updateScore(pid, user, 1)
+				updateQuestionScore(pid, user, 1)
 				
 			elif result['vote'] ==  1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )
-				updateScore(pid, user, -1)	
+				updateQuestionScore(pid, user, -1)	
 			elif result['vote'] ==  0:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
-				updateScore(pid, user, 1)
+				updateQuestionScore(pid, user, 1)
 			elif result['vote'] == -1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 1} } )
-				updateScore(pid, user, 2)
+				updateQuestionScore(pid, user, 2)
 		#################################################FALSE##########################################
 		elif upvote == False:
 			if result == None:
 				upvoteTable.insert({'username': user, 'pid': pid, 'vote': -1})
-				updateScore(pid, user, -1)
+				updateQuestionScore(pid, user, -1)
 			elif result['vote'] ==  -1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': 0} } )			
-				updateScore(pid, user, 1)	
+				updateQuestionScore(pid, user, 1)	
 			elif result['vote'] ==  0:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': -1} } )
-				updateScore(pid, user, -1)
+				updateQuestionScore(pid, user, -1)
 			elif result['vote'] == 1:
 				upvoteTable.update_one({'username':user, 'pid': pid} , { "$set": {'vote': -1} } )
-				updateScore(pid, user, -2)
+				updateQuestionScore(pid, user, -2)
 		return responseOK({'status': 'OK'})
 
-@bp.route('/questions/<IDD>/upvote', methods=['POST'])
-def upvoteAnswer():
+@bp.route('/answers/<IDD>/upvote', methods=['POST'])
+def upvoteAnswer(IDD):
 	if request.method == 'POST':
-		pid = str(IDD)
-		print('===========================/questions/<IDD>/upvote===================================')
+		aid = str(IDD)
+		print('===========================/answers/<IDD>/upvote===================================')
 		if len(session) == 0:
 			return responseOK({'status': 'error','error': 'Please login to upvote answer'})
 		upvote = request.json['upvote']
+		user = session['user']
+		result = upvoteTable.find_one({'username' : user, 'aid': aid} )
+		if upvote == True:
+			if result == None:
+				upvoteTable.insert({'username': user, 'aid': aid, 'vote': 1})
+				updateAnswerScore(aid, user, 1)	
+			elif result['vote'] ==  1:
+				upvoteTable.update_one({'username':user, 'aid': aid} , { "$set": {'vote': 0} } )
+				updateAnswerScore(aid, user, -1)	
+			elif result['vote'] ==  0:
+				upvoteTable.update_one({'username':user, 'aid': aid} , { "$set": {'vote': 1} } )
+				updateAnswerScore(aid, user, 1)
+			elif result['vote'] == -1:
+				upvoteTable.update_one({'username':user, 'aid': aid} , { "$set": {'vote': 1} } )
+				updateAnswerScore(aid, user, 2)
+		#################################################FALSE##########################################
+		elif upvote == False:
+			if result == None:
+				upvoteTable.insert({'username': user, 'aid': aid, 'vote': -1})
+				updateAnswerScore(aid, user, -1)
+			elif result['vote'] ==  -1:
+				upvoteTable.update_one({'username':user, 'aid': aid} , { "$set": {'vote': 0} } )			
+				updateAnswerScore(aid, user, 1)	
+			elif result['vote'] ==  0:
+				upvoteTable.update_one({'username':user, 'aid': aid} , { "$set": {'vote': -1} } )
+				updateAnswerScore(aid, user, -1)
+			elif result['vote'] == 1:
+				upvoteTable.update_one({'username':user, 'aid': aid} , { "$set": {'vote': -1} } )
+				updateAnswerScore(aid, user, -2)
+		return responseOK({'status': 'OK'})
 
 
-
-@bp.route('/searchOK', methods=['GET'])
+@bp.route('/searchME', methods=['GET'])
 def searchOK():
 	if request.method == 'GET':
 		result = questionTable.find()
@@ -280,16 +308,8 @@ def searchOK():
 			login = 1
 		return render_template('questionTable.html', questionTable=result, login= login)
 
-@bp.route('/search', methods=['GET', 'POST'])
+@bp.route('/search', methods=['POST'])
 def search():
-	if request.method == 'GET':
-		result = questionTable.find()
-		login= 0
-		if len(session) == 0:
-			login = 0
-		else:
-			login = 1
-		return render_template('questionTable.html', questionTable=result, login= login)
 	if request.method == 'POST':
 		print('--------------------------------Search-----------------------------')
 		timestamp = time.time()
@@ -336,10 +356,23 @@ def responseNO(stat):
 	respond = Response(jsonData,status=404, mimetype='application/json')
 	return respond
 
-def updateScore(pid, user, val):
+def updateQuestionScore(pid, user, val):
 	question = questionTable.find_one( {'_id': ObjectId(pid)} )
 	new_score = question['score'] + val							#plus one to question
 	questionTable.update_one( {'_id': ObjectId(pid)} , { "$set": {'score': new_score} } )
+	
+	user_filter = userTable.find_one({'username': user})	#plus one to user reputation
+	new_rep = user_filter['reputation']
+	if new_rep == 1 and val < 0:
+		pass
+	else:
+		userTable.update_one({'username': user}, { "$set": {'reputation': new_rep + val} } )
+
+
+def updateAnswerScore(aid, user, val):
+	answer = answerTable.find_one( {'_id': ObjectId(aid)} )
+	new_score = answer['score'] + val							#plus one to answer
+	answerTable.update_one( {'_id': ObjectId(aid)} , { "$set": {'score': new_score} } )
 	
 	user_filter = userTable.find_one({'username': user})	#plus one to user reputation
 	new_rep = user_filter['reputation']

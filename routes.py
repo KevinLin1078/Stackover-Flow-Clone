@@ -26,14 +26,11 @@ aidTable = db['answer_id']
 questionTable = db['question']
 pidTable = db['pid']
 ipTable = db['ip']
-questionIndex = db['questionIndex']
-answerIndex = db['answerIndex']
-secret = db['secret']
 upvoteTable = db['upvote']
 
-@bp.route('/', methods=['GET'])
-def index():
-	return redirect(url_for('question.search'))
+# @bp.route('/', methods=['GET'])
+# def index():
+# 	return redirect(url_for('question.searchOK'))
 
 
 @bp.route('/adduser', methods=["POST", "GET"])
@@ -57,9 +54,9 @@ def adduser():
 					'reputation': 1
 				}
 		userTable.insert(user)
-		msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[email])
-		msg.body = 'validation key:<' + key +'>'
-		mail.send(msg)
+		# msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[email])
+		# msg.body = 'validation key:<' + key +'>'
+		# mail.send(msg)
 		return responseOK({'status':'OK'})
 
 
@@ -106,7 +103,10 @@ def login():
 def logout():
 	if request.method =="POST":
 		print("=========================LOGOUT POST===============================")
-		session.clear()
+		if not session['user']:
+			return responseOK({'status': 'error', 'error': 'Not logged in'})
+		else:
+			session.clear()
 		return responseOK({'status': 'OK'})
 
 
@@ -164,6 +164,29 @@ def getUserAnnswer(getName):
 @app.template_filter('ctime')
 def timectime(s):
 	return str(time.ctime(s))[3:19] # datetime.datetime.fromtimestamp(s)
+
+
+
+
+
+@bp.route('/addmedia', methods=["POST"])
+def addMedia():
+	print('===================Add Media===================')
+	
+	from cassandra.cluster import Cluster
+	cluster = Cluster()
+	session = cluster.connect(keyspace='hw5')
+	print("CONEXXT")
+	
+	file = request.files.get('content')
+	filename = "wertyuiolkjhgfds"
+	b = bytearray(file.read())
+	
+	cqlinsert = "INSERT INTO imgs(filname, content) VALUES (%s, %s);"
+	session.execute(cqlinsert, (filename, b))
+
+	return responseOK({'stat': 'added'})
+
 
 def responseOK(stat):
 	data = stat

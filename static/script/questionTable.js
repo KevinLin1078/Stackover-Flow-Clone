@@ -1,126 +1,75 @@
 $(document).ready(function(){
-   
+
+   $("#dev-table-filter").keypress(  function(e) {
+      search()
+   })
+
+   $(document).on( 'click', '#goodA', function() {
+      aid = $(this).attr("name")
+      upvoteAnswer(aid, true)
+      setTimeout(function(){ 
+         showAnswer()
+      }, 50);
+   })
+   $(document).on( 'click', '#badA', function() {
+      aid = $(this).attr("name")
+      upvoteAnswer(aid, false)
+      setTimeout(function(){ 
+         showAnswer()
+      }, 50);
+   })
 
    $("#goodQ").click( function(e) {
       upvoteQuestion(true)
       key = $('#realQuestionID').text()
-      getQuestion(key)
+      setTimeout(function(){ 
+         getQuestion(key)
+      }, 50);
+      
 
    })   
    $("#badQ").click(function(e) {
       upvoteQuestion(false)
       key = $('#realQuestionID').text()
-      getQuestion(key)
+      setTimeout(function(){ 
+         getQuestion(key)
+      }, 50);
+      
    })  
    
-   $("#logout").click( 
-      function(e) {
-      $.ajax({
-         url: '/logout',
-         type: 'POST',
-         contentType:"application/json",
-         dataType:"json",
-         data: JSON.stringify({}),
-         success: function (data){
-            
-            window.location.href='/login'
-         },
-         error: function(err){
-            alert("ERROR OCCURED WHILE ADDING USER " + err)
-         }
-      })
+   $("#logout").click( function(e) {
+      logout()
    })
-   
-   $("#clickme").click( 
-   function(e) {
-   $.ajax({
-     url: '/search',
-     type: 'POST',
-     contentType:"application/json",
-     dataType:"json",
-     data: JSON.stringify({'q': $('#dev-table-filter').val() }),
-     success: function (data){
-               // data = JSON.parse(data)
-               var myNode = document.getElementById("dev-table");
-               var fc = myNode.children[1];
-               while( fc ) {
-                   myNode.removeChild( fc );
-                   fc = myNode.firstChild;
-               }
-               var myvar = '<thead id=\'addHead\'> <tr> <th>    <a id=\'sortId\'>#</a></th> <th>    <a id=\'sortTitle\'>Questions</a>    </th> <th>    <a id=\'sortUser\'>User</a>  </th> <th>    <a id=\'sortDate\'>Date</a>         </th>  </tr></thead>';
-               $( "#dev-table" ).append( myvar )
-               myvar = '<tbody id=\'queryInfo\'></tbody>'
-               $( "#dev-table" ).append( myvar )
-               
-               
-               $.each(data['questions'],function(index,value){ 
-                   
-                   myvar = '<tr>'+
-                           '            <th>' + value['id'] + '</th>'+
-                           '            <th>' + '<a class="kevin" id="' + value['id'].toString() + '">'+ value['title'] + '</a>' + '</th>' +
-                           '            <th>' + value['user']['username'] + '</th>'+
-                           '            <th>' + value['timestamp'] + '</th>  '+
-                           '        </tr>';
-                   
-                       $('#queryInfo').append(myvar)
-                   
-               });
-
-     },
-     error: function(err){
-        alert("ERROR OCCURED WHILE PUTTING USER " + err)
-     }
-  })
-})   
+      
    $('#back_button').click(
        function(){
-           $('#actual_body').hide()
-           $('#dev-table').show()
-           $('#searchMe').show()
+         window.location.href='/searchME'
+         //   $('#actual_body').hide()
+         //   $('#dev-table').show()
+         //   $('#searchMe').show()
        }
    )
    
-   //answer_submit
-   $("#answer_submit").click( //clickes on question
+   $("#answer_submit").click(
    function() {
-      var body = $('#textarea').val()
-       
-      $.ajax({
-         url: '/questions/' + $('#realQuestionID').text() + '/answers/add',
-         type: 'POST',
-               contentType:"application/json",
-         dataType:"json",
-         data: JSON.stringify({'body': body }),
-         success: function (data){
-                     stat = data['status'].toString()
-                  
-                     if(stat== "error"){
-                        alert("Please Login to Answer Questions")
-                     }else{
-                        myvar = '<p class="input" style="border:1px solid green">' + body + '</p><br>'
-                        $('#answerTable').prepend(myvar)
-                        $('#textarea').val("")
-                     }
-         },
-         error: function(err){
-            alert("ERROR OCCURED WHILE PUTTING USER " + err)
-         }
-      })
-})
+      submitAnswer()
+      showAnswer()
+   })
 
    $(document).on( 'click', 'a.kevin', function() {
       var key = $(this).attr("id")
       getQuestion(key)
+      setTimeout(function(){ 
+         showAnswer()
+      }, 50);
    })
    
-
    $('#showAnswer').hover( function() {
       showAnswer()
    })
-   
 
    $(document).on("contextmenu",function(){
-   return false;
+      return false;
    }); 
    
 
@@ -155,7 +104,29 @@ $(document).ready(function(){
 })
 
 ////////////////////////////////////////////////////////FUNCTIONS///////////////////////////////////
-
+function submitAnswer(){
+   var body = $('#textarea').val()
+       
+      $.ajax({
+         url: '/questions/' + $('#realQuestionID').text() + '/answers/add',
+         type: 'POST',
+               contentType:"application/json",
+         dataType:"json",
+         data: JSON.stringify({'body': body }),
+         success: function (data){
+                     stat = data['status'].toString()
+                  
+                     if(stat== "error"){
+                        alert("Please Login to Answer Questions")
+                     }else{
+                        $('#textarea').val("")
+                     }
+         },
+         error: function(err){
+            alert("ERROR OCCURED WHILE PUTTING USER " + err)
+         }
+      })
+}
 function upvoteQuestion(bool){
    me = $('#realQuestionID').text()
       $.ajax({
@@ -170,6 +141,26 @@ function upvoteQuestion(bool){
                alert('Please login to upvote/downvote')
             }
             
+
+         },
+         error: function(err){
+            alert("ERROR OCCURED WHILE ADDING USER " + err)
+         }
+      })
+}
+function upvoteAnswer(aid, bool){
+   
+      $.ajax({
+         url: '/answers/' + aid.toString() + '/upvote',
+         type: 'POST',
+         contentType:"application/json",
+         dataType:"json",
+         data: JSON.stringify({'upvote': bool}),
+         success: function (data){
+            stat = data['status'].toString()
+            if( stat == 'error'){
+               alert('Please login to upvote/downvote answer')
+            }
 
          },
          error: function(err){
@@ -197,7 +188,15 @@ function showAnswer(){
                   }
                   
                   $.each(data['answers'],function(index,value){ 
-                     myvar =  '<p class="input" style="border:1px solid green">' + value['body'] + '</p><br>'
+                     
+                     myvar =  '<br><br><div class="input" >' + 
+                                 '<span >' +   value['body'] + '</span><br>' +
+                                 '<div class="thumby" style="float:right">'+ 
+                                    '<i id="goodA" class="fa fa-thumbs-up" name="' + value['id'].toString() + '"></i>' + 
+                                    '<span style="font-size: 20px"> ' + value['score'] + " </span>"+
+                                    '<i id="badA" class="fa fa-thumbs-down" name="'+ value['id'].toString() + '"></i>'  +
+                                 '</div>' +
+                              '</div>'
                         $('#answerTable').prepend(myvar)
                   });
       },
@@ -233,6 +232,66 @@ function getQuestion(key){
       },
       error: function(err){
          alert("ERROR OCCURED WHILE PUTTING USER GETTING Question ID2" + err)
+      }
+   })
+}
+
+function search(){
+   $.ajax({
+      url: '/search',
+      type: 'POST',
+      contentType:"application/json",
+      dataType:"json",
+      data: JSON.stringify({'q': $('#dev-table-filter').val() }),
+      success: function (data){
+                // data = JSON.parse(data)
+                var myNode = document.getElementById("dev-table");
+                var fc = myNode.children[1];
+                while( fc ) {
+                    myNode.removeChild( fc );
+                    fc = myNode.firstChild;
+                }
+                var myvar = '<thead id=\'addHead\'> <tr> <th>    <a id=\'sortId\'>#</a></th> <th>    <a id=\'sortTitle\'>Questions</a>    </th> <th>    <a id=\'sortUser\'>User</a>  </th> <th>    <a id=\'sortDate\'>Date</a>         </th>  </tr></thead>';
+                $( "#dev-table" ).append( myvar )
+                myvar = '<tbody id=\'queryInfo\'></tbody>'
+                $( "#dev-table" ).append( myvar )
+                
+                var i = 0
+                $.each(data['questions'],function(index,value){ 
+                    if (i == 1000){
+                       return
+                    }
+                    i+=1
+                    myvar = '<tr>'+
+                            '<th>' + value['id'] + '</th>'+
+                            '<th>' + '<a class="kevin" id="' + value['id'].toString() + '">'+ value['title'] + '</a>' + '</th>' +
+                            '<th>' + value['user']['username'] + '</th>'+
+                            '<th>' + value['timestamp'] + '</th>  '+
+                            '</tr>';
+                    
+                        $('#queryInfo').append(myvar)
+                    
+                });
+ 
+      },
+      error: function(err){
+         alert("ERROR OCCURED WHILE PUTTING USER " + err)
+      }
+   })
+}
+function logout(){
+   $.ajax({
+      url: '/logout',
+      type: 'POST',
+      contentType:"application/json",
+      dataType:"json",
+      data: JSON.stringify({}),
+      success: function (data){
+         
+         window.location.href='/login'
+      },
+      error: function(err){
+         alert("ERROR OCCURED WHILE ADDING USER " + err)
       }
    })
 }
