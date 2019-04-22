@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g
+from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g,make_response
 from werkzeug.security import check_password_hash, generate_password_hash
 import  datetime
 from flask_mail import Mail
@@ -86,7 +86,6 @@ def login():
 		jss =request.json
 		print("=========================LOGIN POST===============================")
 		get_user = userTable.find_one( { 'username': str(jss['username']) } )
-		print("Get user ",get_user)
 		if( get_user == None):
 			return responseOK({'status': 'error'})
 			
@@ -103,10 +102,7 @@ def login():
 def logout():
 	if request.method =="POST":
 		print("=========================LOGOUT POST===============================")
-		if not session['user']:
-			return responseOK({'status': 'error', 'error': 'Not logged in'})
-		else:
-			session.clear()
+		# session.clear()
 		return responseOK({'status': 'OK'})
 
 
@@ -135,9 +131,7 @@ def getUserQuestions(getName):
 		result = userTable.find_one({'username':username})
 		if result == None:
 			return responseOK({'status': 'error'})
-		
 		allQuestions = questionTable.find({ 'username': username } )
-		
 		questionReturn = {'status':'OK', 'questions': [] }
 
 		for result in allQuestions:
@@ -166,27 +160,44 @@ def timectime(s):
 	return str(time.ctime(s))[3:19] # datetime.datetime.fromtimestamp(s)
 
 
-
-
+from cassandra.cluster import Cluster
+cluster = Cluster()
+cassSession = cluster.connect(keyspace='hw5')
+import uuid
 
 @bp.route('/addmedia', methods=["POST"])
 def addMedia():
 	print('===================Add Media===================')
-	
-	from cassandra.cluster import Cluster
-	cluster = Cluster()
-	session = cluster.connect(keyspace='hw5')
 	print("CONEXXT")
-	
 	file = request.files.get('content')
-	filename = "wertyuiolkjhgfds"
+	filename = str(uuid.uuid4())
 	b = bytearray(file.read())
-	
 	cqlinsert = "INSERT INTO imgs(filname, content) VALUES (%s, %s);"
-	session.execute(cqlinsert, (filename, b))
+	cassSession.execute(cqlinsert, (filename, b))
+	return responseOK({'status': 'OK', 'id': filename})
 
-	return responseOK({'stat': 'added'})
+@bp.route('/media/<mediaID>', methods=["GET"])
+def getMedia(mediaID):
+	if request.method == 'GET':
+		filename = str(mediaID)
+		query = "SELECT * FROM imgs WHERE filname = '" + filename + "';"
+		row = cassSession.execute(query)[0]
+		file = row[1]
+		response = make_response(file)
+		return response
 
+
+@bp.route('/touch', methods=["GET"])
+def clean():
+	import clean
+	clean.clearMe()
+
+	query = "SELECT count(*) FROM imgs;"
+	cc = cassSession.execute(query)[0]
+	print(cc)
+	cqlinsert = "TRUNCATE imgs;"
+	cassSession.execute(cqlinsert)
+	return 'cleaned ' + str(cc)
 
 def responseOK(stat):
 	data = stat

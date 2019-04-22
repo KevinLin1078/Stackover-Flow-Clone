@@ -47,13 +47,13 @@ def experiment():
    result = userTable.find_one({'_id': ObjectId('5cb777776954c773ae6226ff')})
    print(result)
       
-text = raw_input("Type (cleandata) or (exp)\n")
-if 'clean' in text:
-   clearMe()
-   print('Cleared Databased')
-else:
-   experiment()
-   print('Experiment successfull')
+# text = raw_input("Type (cleandata) or (exp)\n")
+# if 'clean' in text:
+#    clearMe()
+#    print('Cleared Databased')
+# else:
+#    experiment()
+#    print('Experiment successfull')
 
 
 

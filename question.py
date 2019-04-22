@@ -32,9 +32,9 @@ def addQuestion():
 		print("=========================QUESTION/ADD POST==============nnnnn=================")
 		if len(session) == 0:
 			print('Wrong SESSION')	
-			print("WRONG: ", request.json)
+			#print("WRONG: ", request.json)
 			return responseOK({'status': 'ERROR', 'error': 'Wrong user session'})
-		print("JSON ALMOST: ", request.json)
+		#print("JSON ALMOST: ", request.json)
 		
 		title = None
 		body = None
@@ -164,12 +164,13 @@ def getQuestion(IDD):
 def addAnswer(IDD):
 	if request.method == 'POST':
 		if len(session) == 0:
+			print("NO session answer")
 			return responseOK({'status': 'error','error': 'not logged in'})
 		pid = ObjectId(str(IDD))
 		body = request.json['body']
 		media = None
 		print('================--===========/questions/<IDD>/answers/add===============--====================')
-		print("ANSWER JSON: ", request.json)
+		#print("ANSWER JSON: ", request.json)
 
 		if ('media' in request.json):
 			media = request.json['media']
@@ -222,6 +223,7 @@ def upvoteQuestion(IDD):
 		pid = str(IDD)
 		print('===========================/questions/<IDD>/upvote===================================')
 		if len(session) == 0:
+			print('upvote Wrong session')
 			return responseOK({'status': 'error','error': 'Please login to upvote question'})
 		upvote = request.json['upvote']
 		user = session['user']
