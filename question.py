@@ -14,13 +14,8 @@ bp = Blueprint('question', __name__, template_folder='templates')
 db = client.stack
 userTable = db['user'] 
 answerTable = db['answer']
-aidTable = db['answer_id']
 questionTable = db['question']
-pidTable = db['pid']
 ipTable = db['ip']
-questionIndex = db['questionIndex']
-answerIndex = db['answerIndex']
-secret = db['secret']
 upvoteTable = db['upvote']
 
 
@@ -29,12 +24,9 @@ def addQuestion():
 	if request.method == "GET":
 		return render_template('addQuestion.html')
 	if(request.method == 'POST'):
-		print("=========================QUESTION/ADD POST==============nnnnn=================")
 		if len(session) == 0:
-			print('Wrong SESSION')	
-			#print("WRONG: ", request.json)
+			print('Add Question Wrong SESSION')	
 			return responseOK({'status': 'ERROR', 'error': 'Wrong user session'})
-		#print("JSON ALMOST: ", request.json)
 		
 		title = None
 		body = None
@@ -170,8 +162,6 @@ def addAnswer(IDD):
 		body = request.json['body']
 		media = None
 		print('================--===========/questions/<IDD>/answers/add===============--====================')
-		#print("ANSWER JSON: ", request.json)
-
 		if ('media' in request.json):
 			media = request.json['media']
 
@@ -297,6 +287,20 @@ def upvoteAnswer(IDD):
 				upvoteTable.update_one({'username':user, 'aid': aid} , { "$set": {'vote': -1} } )
 				updateAnswerScore(aid, user, -2)
 		return responseOK({'status': 'OK'})
+
+
+
+# @bp.route('/answers/<IDD>/accept', methods=['POST'])
+# def acceptAnswer(IDD):
+	
+
+
+
+
+
+
+
+
 
 
 @bp.route('/searchME', methods=['GET'])

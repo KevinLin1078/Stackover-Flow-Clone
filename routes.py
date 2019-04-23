@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g,make_response
+from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g,make_response, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 import  datetime
 from flask_mail import Mail
@@ -6,6 +6,8 @@ from flask_mail import Message
 import pymongo 
 from pymongo import MongoClient
 import time
+from email.mime.text import MIMEText
+from subprocess import Popen, PIPE
 from bson.objectid import ObjectId
 app = Flask(__name__)
 client = MongoClient()
@@ -18,13 +20,10 @@ app.config['MAIL_USERNAME'] ='ktube110329@gmail.com'
 app.config['MAIL_PASSWORD']= '@12345678kn'
 mail = Mail(app)
 bp = Blueprint('routes', __name__, template_folder='templates')
-
 db = client.stack
 userTable = db['user'] 
 answerTable = db['answer']
-aidTable = db['answer_id']
 questionTable = db['question']
-pidTable = db['pid']
 ipTable = db['ip']
 upvoteTable = db['upvote']
 
@@ -39,9 +38,7 @@ def adduser():
 		print("GET");
 		return render_template('adduser.html')
 	elif request.method == "POST":
-		print("Request Json ======================ADDUSER POST==========================")
 		jss = request.json
-		print(jss)
 		name = jss['username']
 		email = jss['email']
 		password = jss['password']
@@ -57,6 +54,13 @@ def adduser():
 		# msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[email])
 		# msg.body = 'validation key:<' + key +'>'
 		# mail.send(msg)
+
+		msg = MIMEText('validation key:<' + key +'>')
+		msg["From"] = "kevin.lin.3@stonybrook.edu"
+		msg["To"] = email
+		msg["Subject"] = "Hello"
+		p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE)
+		p.communicate(msg.as_string())
 		return responseOK({'status':'OK'})
 
 
@@ -67,9 +71,6 @@ def verify():
 		return render_template('verify.html')
 	elif request.method == 'POST':
 		jss =request.json
-		print("=========================VERIFY POST===============================")
-		print("POST VERIFY JSON" , jss)
-
 		if(jss['key'] == 'abracadabra' or jss['key'] == 'keykey1212'):
 			query = {'email' : jss['email']}
 			newVal = {"$set": {"verified": "yes" }}  
@@ -83,37 +84,39 @@ def login():
 	if request.method == 'GET':
 		return render_template('login.html')
 	elif request.method == 'POST':
+		print('==========*********************LOGIN')
 		jss =request.json
-		print("=========================LOGIN POST===============================")
+		print(jss)
 		get_user = userTable.find_one( { 'username': str(jss['username']) } )
 		if( get_user == None):
+			print('Login user does not exist')
 			return responseOK({'status': 'error'})
 			
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
-			session.clear()
 			session['user'] = jss['username']
 			return responseOK({'status': 'OK'})
 		else:
+			print('Login Failed ')
 			return responseOK({'status': 'error'})
-	
 
 
 @bp.route('/logout', methods=["POST", "GET"])
 def logout():
 	if request.method =="POST":
-		print("=========================LOGOUT POST===============================")
-		# session.clear()
+		print("LogOUT")
+		session.clear()
+		logTable = db['logme']
+		logTable.insert({"ip": request.remote_addr})
 		return responseOK({'status': 'OK'})
 
 
 @bp.route('/user/<getName>', methods=["GET"])
 def getUser(getName):
 	if request.method == 'GET':
-		print('=========================/user/<getName>===================================')
-		print("name ", getName)
 		username = str(getName)
 		result = userTable.find_one({'username':username})
 		if result == None:
+			print('/user/<getName> : USER DOESNT EXIST')
 			return responseOK({'status': 'error'})
 		user ={	
 					'email': result['email'],
@@ -125,11 +128,11 @@ def getUser(getName):
 @bp.route('/user/<getName>/questions', methods=["GET"])
 def getUserQuestions(getName):
 	if request.method == 'GET':
-		print("=========================USER/<GETNAME> QUESTION==============GET=================")
 		username = str(getName)
 		print(username)
 		result = userTable.find_one({'username':username})
 		if result == None:
+			print('/user/<getName>/questions: USER DOESNT EXIST')
 			return responseOK({'status': 'error'})
 		allQuestions = questionTable.find({ 'username': username } )
 		questionReturn = {'status':'OK', 'questions': [] }
@@ -142,11 +145,11 @@ def getUserQuestions(getName):
 @bp.route('/user/<getName>/answers', methods=["GET"])
 def getUserAnnswer(getName):
 	if request.method == 'GET':
-		print("=========================USER/<GETNAME> QUESTION==============GET=================")
 		username = str(getName)
 		print(username)
 		result = userTable.find_one({'username':username})
 		if result == None:
+			print("/user/<getName>/answers : USER DOESNT EXIST")
 			return responseOK({'status': 'error'})
 		allAnswers = answerTable.find({ 'username': username } )
 		answerReturn = {'status':'OK', 'answers': [] }
@@ -167,23 +170,28 @@ import uuid
 
 @bp.route('/addmedia', methods=["POST"])
 def addMedia():
-	print('===================Add Media===================')
-	print("CONEXXT")
+	if len(session) == 0:
+		print('Add Media User not logged in')	
+		return responseOK({'status': 'error', 'error': 'Please login to add media'})
+	fileID = str(uuid.uuid4())
 	file = request.files.get('content')
-	filename = str(uuid.uuid4())
+	filetype = file.content_type
+
 	b = bytearray(file.read())
-	cqlinsert = "INSERT INTO imgs(filname, content) VALUES (%s, %s);"
-	cassSession.execute(cqlinsert, (filename, b))
-	return responseOK({'status': 'OK', 'id': filename})
+	cqlinsert = "INSERT INTO imgs(fileID, content, filetype) VALUES (%s, %s, %s);"
+	cassSession.execute(cqlinsert, (fileID, b, filetype))
+	return responseOK({'status': 'OK', 'id': fileID})
 
 @bp.route('/media/<mediaID>', methods=["GET"])
 def getMedia(mediaID):
 	if request.method == 'GET':
-		filename = str(mediaID)
-		query = "SELECT * FROM imgs WHERE filname = '" + filename + "';"
+		fileID = str(mediaID)
+		query = "SELECT * FROM imgs WHERE fileID = '" + fileID + "';"
 		row = cassSession.execute(query)[0]
 		file = row[1]
+		filetype = row[2]
 		response = make_response(file)
+		response.headers.set('Content-Type', filetype)
 		return response
 
 
