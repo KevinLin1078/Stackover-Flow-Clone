@@ -56,7 +56,7 @@ def adduser():
 		# mail.send(msg)
 
 		msg = MIMEText('validation key:<' + key +'>')
-		msg["From"] = "kevin.lin.3@stonybrook.edu"
+		msg["From"] = "ktube37@gmail.com"
 		msg["To"] = email
 		msg["Subject"] = "Hello"
 		p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE)
@@ -195,7 +195,7 @@ def getMedia(mediaID):
 		return response
 
 
-@bp.route('/touch', methods=["GET"])
+@bp.route('/ginger', methods=["GET"])
 def clean():
 	import clean
 	clean.clearMe()
@@ -206,6 +206,7 @@ def clean():
 	cqlinsert = "TRUNCATE imgs;"
 	cassSession.execute(cqlinsert)
 	return 'cleaned ' + str(cc)
+
 
 def responseOK(stat):
 	data = stat
