@@ -93,7 +93,7 @@ def addQuestion():
 def getQuestion(IDD):
 	pid = ObjectId(str(IDD))
 	if request.method == 'GET':
-		print("=========================QUESTION/ID====GET===============================")
+		#print("=========================QUESTION/ID====GET===============================")
 		print("ID IS: ", pid)
 
 		result = questionTable.find_one({"_id": pid})
@@ -186,7 +186,7 @@ def addAnswer(IDD):
 		pid = ObjectId(str(IDD))
 		body = request.json['body']
 		media = []
-		print('================--===========/questions/<IDD>/answers/add===============--====================')
+		
 		if ('media' in request.json):
 			media = request.json['media']
 			print('Answers/ADD media: ++++++++++++++++++++++ANSWER++++++MEDIA ', media)
@@ -247,7 +247,6 @@ def getAnswers(IDD):
 						'timestamp': result['timestamp'],
 						'media': result['media']
 					}
-
 			answerReturn['answers'].append(temp)
 		print(answerReturn)
 
