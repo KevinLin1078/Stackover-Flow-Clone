@@ -5,7 +5,7 @@ from flask_mail import Mail
 from flask_mail import Message
 import pymongo 
 from pymongo import MongoClient
-import time
+import time, random, string
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 from bson.objectid import ObjectId
@@ -104,7 +104,7 @@ def login():
 def logout():
 	if request.method =="POST":
 		print("LogOUT")
-		session.clear()
+		#session.clear()
 		logTable = db['logme']
 		logTable.insert({"ip": request.remote_addr})
 		return responseOK({'status': 'OK'})
@@ -166,25 +166,25 @@ def timectime(s):
 from cassandra.cluster import Cluster
 cluster = Cluster()
 cassSession = cluster.connect(keyspace='hw5')
-import uuid
 
 @bp.route('/addmedia', methods=["POST"])
 def addMedia():
 	if len(session) == 0:
 		print('Add Media User not logged in')	
 		return responseOK({'status': 'error', 'error': 'Please login to add media'})
-	fileID = str(uuid.uuid4())
+	fileID = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(40))
 	file = request.files.get('content')
 	filetype = file.content_type
 
 	b = bytearray(file.read())
-	cqlinsert = "INSERT INTO imgs(fileID, content, filetype) VALUES (%s, %s, %s);"
-	cassSession.execute(cqlinsert, (fileID, b, filetype))
+	cqlinsert = "INSERT INTO imgs(fileID, content, filetype, username) VALUES (%s, %s, %s, %s);"
+	cassSession.execute(cqlinsert, (fileID, b, filetype, session['user']))
 	return responseOK({'status': 'OK', 'id': fileID})
 
 @bp.route('/media/<mediaID>', methods=["GET"])
 def getMedia(mediaID):
 	if request.method == 'GET':
+		print("GET MEDIA")
 		fileID = str(mediaID)
 		query = "SELECT * FROM imgs WHERE fileID = '" + fileID + "';"
 		row = cassSession.execute(query)[0]

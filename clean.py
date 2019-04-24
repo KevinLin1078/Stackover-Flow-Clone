@@ -12,18 +12,21 @@ def clearMe():
    questionTable = db['question']
    ipTable = db['ip']
    upvoteTable = db['upvote']
+   mediaTable = db['mediaID']
 
    userTable.drop()
    answerTable.drop()
    questionTable.drop()
    ipTable.drop() 
    upvoteTable.drop()
+   mediaTable.drop()
 
    userTable = db['user'] 
    answerTable = db['answer']
    questionTable = db['question']
    ipTable = db['ip']
    upvoteTable = db['upvote']
+   mediaTable = db['mediaID']
 
 
    userTable.insert({})
@@ -31,12 +34,14 @@ def clearMe():
    questionTable.insert({})
    ipTable.insert({})
    upvoteTable.insert({})
+   mediaTable.insert({})
 
    userTable.delete_many({})
    answerTable.delete_many({})
    questionTable.delete_many({})
    ipTable.delete_many({})
    upvoteTable.delete_many({})
+   mediaTable.delete_many({})
    print('UPDATED DATA')
 
 def experiment():

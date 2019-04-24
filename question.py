@@ -17,6 +17,12 @@ answerTable = db['answer']
 questionTable = db['question']
 ipTable = db['ip']
 upvoteTable = db['upvote']
+mediaTable = db['mediaID']
+
+
+from cassandra.cluster import Cluster
+cluster = Cluster()
+cassSession = cluster.connect(keyspace='hw5')
 
 
 @bp.route('/questions/add', methods=["POST", "GET"])
@@ -26,19 +32,36 @@ def addQuestion():
 	if(request.method == 'POST'):
 		if len(session) == 0:
 			print('Add Question Wrong SESSION')	
-			return responseOK({'status': 'ERROR', 'error': 'Wrong user session'})
-		
+			return responseOK({'status': 'error', 'error': 'Wrong user session'})
 		title = None
 		body = None
 		tags = None
-		
+		media = []
 		d = request.json
+		
+
+		if 'media' in d:
+			media = request.json['media']
+			print('Quesiotns/ADD +++++++++++++++++++++++++++++MEDIA: ', media)
+			if len(media) != 0:
+				for item in media:
+						is_found = mediaTable.find_one({"mediaID": item})
+						if is_found:
+							print('Media ID FOUND IN ANOTHER QUESTION ')
+							return responseOK({ 'status': 'error', 'error':"media ID already exists"}) 
+						
+						query = "SELECT * FROM imgs WHERE fileID = '" + item + "';"
+						row = cassSession.execute(query)[0]
+						name = row[3]
+						if name != session['user']:
+							return responseOK({ 'status': 'error', 'error':"media does not belong to poster"}) 
+
 		if ('title' in d) and ('body' in d) and ('tags' in d) :
 			title = request.json['title'].encode("utf-8")
 			body = request.json['body'].encode("utf-8")
 			tags = request.json['tags']
 		else:
-			return responseOK({'status': 'ERROR', 'error': 'Json key doesnt exist'})
+			return responseOK({'status': 'error', 'error': 'Json key doesnt exist'})
 				
 		username = session['user']
 		user_filter = userTable.find_one({'username': username})
@@ -53,7 +76,7 @@ def addQuestion():
 									'view_count': 0,
 									'answer_count': 0,
 									'timestamp': int(time.time()),
-									'media': None,
+									'media': media,
 									'tags': tags,
 									'accepted_answer_id': None,
 									'username': str(username),
@@ -61,7 +84,9 @@ def addQuestion():
 								}
 		pid = questionTable.insert(question)
 		pid = str(pid)
-		
+		for item in media:
+			mediaTable.insert({"mediaID": item, 'pid': pid})
+
 		return responseOK({ 'status': 'OK', 'id':pid}) 
 
 @bp.route('/questions/<IDD>', methods=[ "GET", 'DELETE'])
@@ -116,7 +141,7 @@ def getQuestion(IDD):
 									"score": score,
 									"view_count": view_count,
 									"answer_count": 0,
-									"media": None,
+									"media": media,
 									"tags": tags,
 									"accepted_answer_id": None,
 									"title": title,
@@ -160,10 +185,22 @@ def addAnswer(IDD):
 			return responseOK({'status': 'error','error': 'not logged in'})
 		pid = ObjectId(str(IDD))
 		body = request.json['body']
-		media = None
+		media = []
 		print('================--===========/questions/<IDD>/answers/add===============--====================')
 		if ('media' in request.json):
 			media = request.json['media']
+			print('Answers/ADD media: ++++++++++++++++++++++ANSWER++++++MEDIA ', media)
+			if len(media) != 0:
+				for item in media:
+						is_found = mediaTable.find_one({"mediaID": item})
+						if is_found != None: #if id exist already, return error
+							return responseOK({ 'status': 'error', 'error':"media ID already exists"}) 
+						
+						query = "SELECT * FROM imgs WHERE fileID = '" + item + "';"
+						row = cassSession.execute(query)[0]
+						name = row[3]
+						if name != session['user']:
+							return responseOK({ 'status': 'error', 'error':"media does not belong to poster"}) 
 
 		userID = userTable.find_one({'username': session['user']})['_id']
 		userID = str(userID)
@@ -181,6 +218,15 @@ def addAnswer(IDD):
 					}
 		aid = answerTable.insert(answer)
 		aid = str(aid)
+
+		if len(media) != 0:
+			for item in media:
+					is_found = mediaTable.find_one({"mediaID": item})
+					if is_found == None:
+						mediaTable.insert({"mediaID": item, 'aid': aid})
+					else:
+						return responseOK({ 'status': 'error', 'error':"media ID already exists"}) 
+
 		return responseOK({'status': 'OK', 'id': str(aid)})
 
 @bp.route('/questions/<IDD>/answers', methods=['GET'])
@@ -199,7 +245,7 @@ def getAnswers(IDD):
 						'score': result['score'],
 						'is_accepted': result['is_accepted'],
 						'timestamp': result['timestamp'],
-						'media': None
+						'media': result['media']
 					}
 
 			answerReturn['answers'].append(temp)
@@ -292,15 +338,6 @@ def upvoteAnswer(IDD):
 
 # @bp.route('/answers/<IDD>/accept', methods=['POST'])
 # def acceptAnswer(IDD):
-	
-
-
-
-
-
-
-
-
 
 
 @bp.route('/searchME', methods=['GET'])
