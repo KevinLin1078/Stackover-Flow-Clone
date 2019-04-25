@@ -1,7 +1,7 @@
 from flask import Flask 
 import pymongo 
 from pymongo import MongoClient
-
+from bson.objectid import ObjectId
 
 def clearMe():
    client = MongoClient()
@@ -45,33 +45,117 @@ def clearMe():
    print('UPDATED DATA')
 
 
+# client = MongoClient()
+# db = client['stack']  
+# questionTable = db['question']
+
+def filter_without_query(timestamp, limit, sort_by, tags, has_media, accepted):
+   print("NO QUERY" ,(timestamp, limit, sort_by, tags, has_media, accepted))
+
+   questFilter = []
+   allQuestion = questionTable.find();
+   for q in allQuestion:
+      if q['timestamp'] <= timestamp:
+         questFilter.append(q)
+   print('THERE ARE ', len(questFilter))
+   questFilter.sort(key=lambda x: x[sort_by], reverse=True)
+
+   accept_arr = []  
+   if accepted == False:
+      acceptFalse(questFilter, accept_arr)
+   if accepted == True:
+      acceptTrue(questFilter, accept_arr)
+   
+   mediaArr = []
+   if has_media == True:
+      mediaTrue(accept_arr, mediaArr)
+   if has_media == False:
+      mediaFalse(accept_arr, mediaArr)
 
 
-   
-from bson.objectid import ObjectId
-def experiment(IDD):
-   client = MongoClient()
-   db = client['stack']         #    use wp2
-   answerTable = db['answer']
-   questionTable = db['question']
-   aid = ObjectId(str(IDD))
-   answer = answerTable.find_one({'_id': aid})
-   if answer != None:
-      print("ANSWER EXISTS")
-   pid = answer['pid']
-   
-   
-   question = questionTable.find_one({'_id': pid })
-   poster = question['username']
-   answerTable.update_one({'_id': aid}, { "$set": {'is_accepted': True} })
-   
-   questionTable.update_one({'_id': pid }, { "$set": {'accepted_answer_id':  'hey' }} )
-   print("aid ===> " , aid)
-   print("pid ===> " , pid)
-   rr = questionTable.find_one( {'_id': pid } )['accepted_answer_id'] 
-   print(rr)
-# experiment('5cc10dae44ed9d5bc528e81d')
+   return mediaArr[0:limit]
 
+
+
+def mediaTrue(questFilter, ret):
+	for q in questFilter:
+		if len(q['media']) != 0:
+			temp = {
+						'id': q['id'],
+						'title':q['title'],
+						'body': q['body'],
+						'tags': q['tags'],
+						'answer_count': 0,
+						'media': q['media'],
+						'accepted_answer_id': q['accepted_answer_id'] ,
+						'user':q['user'],
+						'timestamp': q['timestamp'],
+						'score': q['score'],
+						"view_count": q['view_count']
+					}
+			ret.append(temp)
+
+def mediaFalse(questFilter, ret):
+	for q in questFilter:
+		if q['media'] == []:
+			temp = {
+						'id': q['id'],
+						'title':q['title'],
+						'body': q['body'],
+						'tags': q['tags'],
+						'answer_count': 0,
+						'media': q['media'],
+						'accepted_answer_id': q['accepted_answer_id'] ,
+						'user':q['user'],
+						'timestamp': q['timestamp'],
+						'score': q['score'],
+						"view_count": q['view_count']
+					}
+			ret.append(temp)
+
+def acceptFalse(questFilter, ret):
+   for q in questFilter:
+         if q['accepted_answer_id'] == None:
+            temp = {
+               'id': q['_id'],
+               'title':q['title'],
+               'body': q['body'],
+               'tags': q['tags'],
+               'answer_count': 0,
+               'media': q['media'],
+               'accepted_answer_id': q['accepted_answer_id'] ,
+               'user':q['user'],
+               'timestamp': q['timestamp'],
+               'score': q['score'],
+               "view_count": q['view_count']
+            }
+            ret.append(temp)
+def acceptTrue(questFilter, ret):
+   for q in questFilter:
+         if q['accepted_answer_id'] != None:
+            temp = {
+               'id': q['_id'],
+               'title':q['title'],
+               'body': q['body'],
+               'tags': q['tags'],
+               'answer_count': 0,
+               'media': q['media'],
+               'accepted_answer_id': q['accepted_answer_id'] ,
+               'user':q['user'],
+               'timestamp': q['timestamp'],
+               'score': q['score'],
+               "view_count": q['view_count']
+            }
+            ret.append(temp)
+
+
+
+
+def play():
+   arr = filter_without_query(1556171357.110906, 25, 'timestamp', [], True, True)
+   for a in arr:
+      print(a['title'])
+   print(len(arr), 'slim body')
 
 '''
 query =' BRANCHes'.strip().lower()
