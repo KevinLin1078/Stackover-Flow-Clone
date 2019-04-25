@@ -44,22 +44,33 @@ def clearMe():
    mediaTable.delete_many({})
    print('UPDATED DATA')
 
-def experiment():
+
+
+
+   
+from bson.objectid import ObjectId
+def experiment(IDD):
    client = MongoClient()
    db = client['stack']         #    use wp2
-   userTable = db['user']
-   from bson.objectid import ObjectId
-   result = userTable.find_one({'_id': ObjectId('5cb777776954c773ae6226ff')})
-   print(result)
-      
-# text = raw_input("Type (cleandata) or (exp)\n")
-# if 'clean' in text:
-#    clearMe()
-#    print('Cleared Databased')
-# else:
-#    experiment()
-#    print('Experiment successfull')
-
+   answerTable = db['answer']
+   questionTable = db['question']
+   aid = ObjectId(str(IDD))
+   answer = answerTable.find_one({'_id': aid})
+   if answer != None:
+      print("ANSWER EXISTS")
+   pid = answer['pid']
+   
+   
+   question = questionTable.find_one({'_id': pid })
+   poster = question['username']
+   answerTable.update_one({'_id': aid}, { "$set": {'is_accepted': True} })
+   
+   questionTable.update_one({'_id': pid }, { "$set": {'accepted_answer_id':  'hey' }} )
+   print("aid ===> " , aid)
+   print("pid ===> " , pid)
+   rr = questionTable.find_one( {'_id': pid } )['accepted_answer_id'] 
+   print(rr)
+# experiment('5cc10dae44ed9d5bc528e81d')
 
 
 '''

@@ -137,7 +137,7 @@ def getQuestion(IDD):
 									"answer_count": 0,
 									"media": media,
 									"tags": tags,
-									"accepted_answer_id": None,
+									"accepted_answer_id": result['accepted_answer_id'],
 									"title": title,
 									"body": body,
 									"id": pid,
@@ -343,16 +343,22 @@ def acceptAnswer(IDD):
 		if len(session) == 0:
 			return responseOK({'status': 'error','error': 'Please login to accept answer'})
 		aid = ObjectId(str(IDD))
-		
+		print('--------------------------------------ACCEPT--------------------------')
 		answer = answerTable.find_one({'_id': aid})
 		pid = answer['pid']
 		
-		question = questionTable.find_one({'_id': ObjectId(pid)})
+		question = questionTable.find_one({'_id': pid })
 		poster = question['username']
-
 		if session['user'] != poster:
 			return responseOK({'status': 'error', 'error': 'Not original poster'})
+		
+		qq = questionTable.find_one({'_id': pid })
+		if qq['accepted_answer_id'] != None: #if answer already revolved the question
+			return responseOK({'status': 'error', 'error':'Question already resolved'}) 
+
 		answerTable.update_one({'_id': aid}, { "$set": {'is_accepted': True} })
+		questionTable.update_one({'_id': pid }, { "$set": {'accepted_answer_id': IDD}} )
+	
 	return responseOK({'status': 'OK'})
 
 
