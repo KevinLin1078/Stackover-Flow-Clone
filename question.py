@@ -514,6 +514,7 @@ def filter_with_query(query, timestamp, limit, sort_by, tags, has_media, accepte
 						}
 			ret.append(temp)			
 	ret.sort(key=lambda x: x[sort_by], reverse=True) # sorts all item by timestamp or score
+	
 	accept_arr = []  
 	if accepted == True:
 		acceptTrue(questFilter, accept_arr)
@@ -528,11 +529,11 @@ def filter_with_query(query, timestamp, limit, sort_by, tags, has_media, accepte
 	
 	tagArr = []
 	if len(tags) == 0:
-		return {'status':'OK','questions': mediaArr[0:limit],'error':"Without Query Media" }
+		return {'status':'OK','questions': mediaArr[0:limit],'error':"With Query Media " +str(len(mediaArr[0:limit])) }
 	else:
 		tagFinder(mediaArr, tagArr, tags)
 
-	return {'status':'OK','questions': tagArr[0:limit],'error':"Without Query" }
+	return {'status':'OK','questions': tagArr[0:limit],'error':"With Query" + str(len(tagArr[0:limit]))  }
 
 def filter_without_query(timestamp, limit, sort_by, tags, has_media, accepted):
 	print("NO QUERY")
@@ -558,11 +559,11 @@ def filter_without_query(timestamp, limit, sort_by, tags, has_media, accepted):
 	
 	tagArr = []
 	if len(tags) == 0:
-		return {'status':'OK','questions': mediaArr[0:limit],'error':"Without Query Media" }
+		return {'status':'OK','questions': mediaArr[0:limit],'error':"Without Query Media " +str(len(mediaArr[0:limit])) }
 	else:
 		tagFinder(mediaArr, tagArr, tags)
 
-	return {'status':'OK','questions': tagArr[0:limit],'error':"Without Query" }
+	return {'status':'OK','questions': tagArr[0:limit],'error':"Without Query" + str(len(tagArr[0:limit]))  }
 
 
 def acceptTrue(questFilter, ret):
@@ -639,11 +640,15 @@ def mediaFalse(questFilter, ret):
 
 
 def tagFinder(questFilter, ret, tags):
+	containAll= True
 	for q in questFilter:
 		tag_arr = q['tags']
-		for tag in tag_arr:
-			if tag in tags:
-				temp = {
+		for tag in tags:
+			if tag not in tag_arr:
+				containAll = False
+				break;
+		if containAll == True:
+			temp = {
 						'id': str(q['id']),
 						'title':q['title'],
 						'body': q['body'],
@@ -656,5 +661,6 @@ def tagFinder(questFilter, ret, tags):
 						'score': q['score'],
 						"view_count": q['view_count']
 					}
-				ret.append(temp)
-				break; 
+			ret.append(temp)
+		else:
+			containAll =True
