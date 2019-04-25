@@ -245,7 +245,7 @@ def getAnswers(IDD):
 						'media': result['media']
 					}
 			answerReturn['answers'].append(temp)
-		print(answerReturn)
+		#print(answerReturn)
 
 		return responseOK(answerReturn)
 
@@ -337,8 +337,23 @@ def upvoteAnswer(IDD):
 
 
 
-# @bp.route('/answers/<IDD>/accept', methods=['POST'])
-# def acceptAnswer(IDD):
+@bp.route('/answers/<IDD>/accept', methods=['POST'])
+def acceptAnswer(IDD):
+	if request.method == 'POST':
+		if len(session) == 0:
+			return responseOK({'status': 'error','error': 'Please login to accept answer'})
+		aid = ObjectId(str(IDD))
+		
+		answer = answerTable.find_one({'_id': aid})
+		pid = answer['pid']
+		
+		question = questionTable.find_one({'_id': ObjectId(pid)})
+		poster = question['username']
+
+		if session['user'] != poster:
+			return responseOK({'status': 'error', 'error': 'Not original poster'})
+		answerTable.update_one({'_id': aid}, { "$set": {'is_accepted': True} })
+	return responseOK({'status': 'OK'})
 
 
 @bp.route('/searchME', methods=['GET'])
