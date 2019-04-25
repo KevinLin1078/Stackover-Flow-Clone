@@ -152,34 +152,6 @@ def mediaFalse(questFilter, ret):
 					}
 			ret.append(temp)
 
-
-# def tagFinder(questFilter, ret, tags):
-#    containAll= True
-# 	for q in questFilter:
-# 		tag_arr = q['tags']
-# 		for tag in tags:
-#          if tag not in tag_arr:
-#             containAll = False
-#             break;
-#       if containAll == True:
-#          temp = {
-# 						'id': str(q['id']),
-# 						'title':q['title'],
-# 						'body': q['body'],
-# 						'tags': q['tags'],
-# 						'answer_count': 0,
-# 						'media': q['media'],
-# 						'accepted_answer_id': q['accepted_answer_id'] ,
-# 						'user':q['user'],
-# 						'timestamp': q['timestamp'],
-# 						'score': q['score'],
-# 						"view_count": q['view_count']
-# 					}
-# 		   ret.append(temp)
-#       else:
-#          containAll =True
-
-
 def play():
    arr = filter_without_query(1556178209.562155, 25, 'timestamp', ['html', 'css'], False, False)
    arr = arr['questions']
@@ -189,58 +161,13 @@ def play():
 
 
 
-'''
-query =' BRANCHes'.strip().lower()
-print("WITH QUERY")
-search_query = {}
-search_query['$or'] = []
 
-query_title = {}
-query_title['$or'] = []
-
-query_body = {}
-query_body['$or'] =[]
-
-query = query.split(' ')
-
-for each in query:
-   term = {}
-   term['$or'] = []
-   term['$or'].append({'title':{'$regex': ' ' + each}})
-   term['$or'].append({'title':{'$regex': each + ' '}})
-   query_title['$or'].append(term)
-
-   term = {}
-   term['$or'] = []
-   term['$or'].append({'body':{'$regex': ' ' + each}})
-   term['$or'].append({'body':{'$regex': each + ' '}})
-   query_body['$or'].append(term)
-
-search_query['$or'].append(query_title)
-search_query['$or'].append(query_body)
-
-results = questionTable.find(search_query)
-for i in results:
-   print(i)
-'''
-'''
-use stack
-db.createCollection("user")
-db.createCollection("question")
-db.createCollection("ip")
-db.createCollection("answer")
-
-'''
-
-#userTable.remove()
-#userTable.insert({'email': "kevin" , 'pass': None} )
-#userTable.insert({'email': "nicole" , 'pass': None} )
+# from cassandra.cluster import Cluster
+# cluster = Cluster()
+# cassSession = cluster.connect(keyspace='hw5')
 
 
-#print( userTable.find_one({'email':'nicole'})['email']          )
+# query = "SELECT count(*) FROM imgs WHERE fileID = '" + 'DR5SW9DWY8GUXCEI4EKNW130YGCK3XAQF9JOA41X' + "';"
+# row = cassSession.execute(query)[0].count
 
-#query = {"email": "mykey"}
-#newVal = {"$set": {"key": "KKKK"}}  
-#userTable.update_one(query, newVal)
-
-
+# print(row)

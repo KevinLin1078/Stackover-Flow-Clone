@@ -27,6 +27,11 @@ questionTable = db['question']
 ipTable = db['ip']
 upvoteTable = db['upvote']
 
+
+
+from cassandra.cluster import Cluster
+cluster = Cluster()
+cassSession = cluster.connect(keyspace='hw5')
 # @bp.route('/', methods=['GET'])
 # def index():
 # 	return redirect(url_for('question.searchOK'))
@@ -41,6 +46,10 @@ def adduser():
 		jss = request.json
 		name = jss['username']
 		email = jss['email']
+		user_exist = userTable.find_one({'username': name})
+		# email_exist = userTable.find_one({'email': email})
+		if user_exist != None :
+			return responseNO({'status':'error', 'error': 'Duplicate user'})
 		password = jss['password']
 		key = 'keykey1212'
 		user = 	{ 	
@@ -51,9 +60,6 @@ def adduser():
 					'reputation': 1
 				}
 		userTable.insert(user)
-		# msg = Message("Hello",sender="ktube110329@gmail.com", recipients=[email])
-		# msg.body = 'validation key:<' + key +'>'
-		# mail.send(msg)
 
 		msg = MIMEText('validation key:<' + key +'>')
 		msg["From"] = "ktube37@gmail.com"
@@ -71,12 +77,16 @@ def verify():
 		return render_template('verify.html')
 	elif request.method == 'POST':
 		jss =request.json
+		emailFilter = userTable.find_one({"email": jss['email']})
+		if emailFilter == None:
+			return responseNO({'status': 'error', 'error': 'Invalid email'})
+
 		if(jss['key'] == 'abracadabra' or jss['key'] == 'keykey1212'):
 			query = {'email' : jss['email']}
 			newVal = {"$set": {"verified": "yes" }}  
 			userTable.update_one(query, newVal)
 		else:
-			return responseOK({'status': 'error'})
+			return responseNO({'status': 'error', 'error': 'Wrong key-email verification'})
 		return responseOK({'status': 'OK'})
 
 @bp.route('/login', methods=["POST", "GET"])
@@ -89,15 +99,13 @@ def login():
 		print(jss)
 		get_user = userTable.find_one( { 'username': str(jss['username']) } )
 		if( get_user == None):
-			print('Login user does not exist')
-			return responseOK({'status': 'error'})
+			return responseNO({'status': 'error', 'error':"Login user does not exist"})
 			
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
 			session['user'] = jss['username']
 			return responseOK({'status': 'OK'})
 		else:
-			print('Login Failed ')
-			return responseOK({'status': 'error'})
+			return responseNO({'status': 'error', 'error':"Wrong key-email pair"})
 
 
 @bp.route('/logout', methods=["POST", "GET"])
@@ -116,8 +124,7 @@ def getUser(getName):
 		username = str(getName)
 		result = userTable.find_one({'username':username})
 		if result == None:
-			print('/user/<getName> : USER DOESNT EXIST')
-			return responseOK({'status': 'error'})
+			return responseNO({'status': 'error', 'error': 'User does not exist'})
 		user ={	
 					'email': result['email'],
 					'reputation': result['reputation']
@@ -132,8 +139,7 @@ def getUserQuestions(getName):
 		print(username)
 		result = userTable.find_one({'username':username})
 		if result == None:
-			print('/user/<getName>/questions: USER DOESNT EXIST')
-			return responseOK({'status': 'error'})
+			return responseNO({'status': 'error', 'error': 'USER DOESNT EXIST'})
 		allQuestions = questionTable.find({ 'username': username } )
 		questionReturn = {'status':'OK', 'questions': [] }
 
@@ -163,15 +169,12 @@ def timectime(s):
 	return str(time.ctime(s))[3:19] # datetime.datetime.fromtimestamp(s)
 
 
-from cassandra.cluster import Cluster
-cluster = Cluster()
-cassSession = cluster.connect(keyspace='hw5')
 
 @bp.route('/addmedia', methods=["POST"])
 def addMedia():
 	if len(session) == 0:
 		print('Add Media User not logged in')	
-		return responseOK({'status': 'error', 'error': 'Please login to add media'})
+		return responseNO({'status': 'error', 'error': 'Please login to add media'})
 	fileID = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(40))
 	file = request.files.get('content')
 	filetype = file.content_type
@@ -184,8 +187,13 @@ def addMedia():
 @bp.route('/media/<mediaID>', methods=["GET"])
 def getMedia(mediaID):
 	if request.method == 'GET':
-		print("GET MEDIA")
+		print("GET MEDIA ", mediaID)
 		fileID = str(mediaID)
+		query = "SELECT count(*) FROM imgs WHERE fileID = '" + fileID + "';"
+		row = cassSession.execute(query)[0].count
+		if row == 0:
+			return responseNO({'status':'error', 'error': 'Media Id does not exist'})
+
 		query = "SELECT * FROM imgs WHERE fileID = '" + fileID + "';"
 		row = cassSession.execute(query)[0]
 		file = row[1]

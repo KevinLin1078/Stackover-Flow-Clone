@@ -168,8 +168,24 @@ def getQuestion(IDD):
 				return responseNO({'status':'error', 'error': 'Not orginal user'})
 			else:
 				print('SUCCESSFULLY DELTED, user is original')
+				question_delete = questionTable.find_one({'_id': pid})
+				allMedia = question_delete['media']
+				for m in allMedia:
+					query = "DELETE FROM imgs WHERE fileID = '" + m + "';"
+					print('=============', m)
+					row = cassSession.execute(query)
+				
+				answer_delete = answerTable.find({'pid': pid})
+				for a in answer_delete:
+					ans_media = a['media']
+					for i in ans_media:
+						query = "DELETE FROM imgs WHERE fileID = '" + i + "';"
+						print('=============', m)
+						row = cassSession.execute(query)
+
+
 				questionTable.delete_one({'_id': pid})
-				answerTable.delete_one({'pid': pid})
+				answerTable.delete_many({'pid': pid})
 				ipTable.delete_many({'pid': pid})
 				return responseOK({'status': 'OK'})
 				
