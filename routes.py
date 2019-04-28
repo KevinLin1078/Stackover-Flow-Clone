@@ -32,9 +32,10 @@ upvoteTable = db['upvote']
 from cassandra.cluster import Cluster
 cluster = Cluster()
 cassSession = cluster.connect(keyspace='hw5')
-# @bp.route('/', methods=['GET'])
-# def index():
-# 	return redirect(url_for('question.searchOK'))
+@bp.route('/', methods=['GET'])
+@bp.route('/search', methods=['GET'])
+def index():
+	return redirect(url_for('question.searchOK'))
 
 
 @bp.route('/adduser', methods=["POST", "GET"])

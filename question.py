@@ -19,11 +19,9 @@ ipTable = db['ip']
 upvoteTable = db['upvote']
 mediaTable = db['mediaID']
 
-
 from cassandra.cluster import Cluster
 cluster = Cluster()
 cassSession = cluster.connect(keyspace='hw5')
-
 
 @bp.route('/questions/add', methods=["POST", "GET"])
 def addQuestion():
@@ -378,7 +376,7 @@ def acceptAnswer(IDD):
 	return responseOK({'status': 'OK'})
 
 
-@bp.route('/searchME', methods=['GET'])
+@bp.route('/searchOK', methods=['GET'])
 def searchOK():
 	if request.method == 'GET':
 		result = questionTable.find()
@@ -515,27 +513,14 @@ def filter_with_query(query, timestamp, limit, sort_by, tags, has_media, accepte
 	ret =[]
 	for q in results:
 		if q['timestamp'] <= timestamp:
-			temp = {
-							'id': str(q['_id']),
-							'title':q['title'],
-							'body': q['body'],
-							'tags': q['tags'],
-							'answer_count': 0,
-							'media': None,
-							'accepted_answer_id': None,
-							'user':q['user'],
-							'timestamp': q['timestamp'],
-							'score': 0,
-							"view_count": q['view_count']
-						}
-			ret.append(temp)			
+			ret.append(q)			
 	ret.sort(key=lambda x: x[sort_by], reverse=True) # sorts all item by timestamp or score
 	
 	accept_arr = []  
 	if accepted == True:
-		acceptTrue(questFilter, accept_arr)
+		acceptTrue(ret, accept_arr)
 	elif accepted == False:
-		acceptFalse(questFilter, accept_arr)
+		acceptFalse(ret, accept_arr)
 	
 	mediaArr = []
 	if has_media == True:

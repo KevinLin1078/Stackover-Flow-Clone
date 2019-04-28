@@ -11,6 +11,11 @@ $(document).ready(function(){
          showAnswer()
       }, 50);
    })
+   $(document).on( 'click', '.tags', function() {
+      alert('c1')
+      $(this).parent.remove()
+      alert('c2')
+   })
    $(document).on( 'click', '#badA', function() {
       aid = $(this).attr("name")
       upvoteAnswer(aid, false)
@@ -19,6 +24,9 @@ $(document).ready(function(){
       }, 50);
    })
 
+   $('#clearTag').click(function(e){
+      deleteAllTags()
+   })
    $("#goodQ").click( function(e) {
       upvoteQuestion(true)
       key = $('#realQuestionID').text()
@@ -37,13 +45,17 @@ $(document).ready(function(){
       
    })  
    
+   $("#addTag").click( function(e) {
+      addTag()
+   })
+   
    $("#logout").click( function(e) {
       logout()
    })
-      
+
    $('#back_button').click(
        function(){
-         window.location.href='/searchME'
+         window.location.href='/searchOK'
          //   $('#actual_body').hide()
          //   $('#dev-table').show()
          //   $('#searchMe').show()
@@ -201,7 +213,7 @@ function showAnswer(){
                   });
       },
       error: function(err){
-         alert("ERROR OCCURED WHILE PUTTING USER GETTING Question ID2" + err)
+         
       }
    })
 }
@@ -231,7 +243,7 @@ function getQuestion(key){
                   }
       },
       error: function(err){
-         alert("ERROR OCCURED WHILE PUTTING USER GETTING Question ID2" + err)
+         
       }
    })
 }
@@ -242,7 +254,7 @@ function search(){
       type: 'POST',
       contentType:"application/json",
       dataType:"json",
-      data: JSON.stringify({'q': $('#dev-table-filter').val() }),
+      data: JSON.stringify({'q': $('#dev-table-filter').val(), 'tags': getAllTags() }),
       success: function (data){
                 // data = JSON.parse(data)
                 var myNode = document.getElementById("dev-table");
@@ -258,14 +270,11 @@ function search(){
                 
                 var i = 0
                 $.each(data['questions'],function(index,value){ 
-                    if (i == 1000){
-                       return
-                    }
                     i+=1
                     myvar = '<tr>'+
-                            '<th>' + value['id'] + '</th>'+
+                            '<th>' + i + '</th>'+
                             '<th>' + '<a class="kevin" id="' + value['id'].toString() + '">'+ value['title'] + '</a>' + '</th>' +
-                            '<th>' + value['user']['username'] + '</th>'+
+                            '<th>' + '[' + value['tags'].join(', ')+  ']</th>'+
                             '<th>' + value['timestamp'] + '</th>  '+
                             '</tr>';
                     
@@ -294,4 +303,36 @@ function logout(){
          alert("ERROR OCCURED WHILE ADDING USER " + err)
       }
    })
+}
+
+
+function addTag(){
+   tag = $(".tag_box").val()
+   if(tag.length == 0){
+      alert("Tags cannot be empty")
+   }else{
+      ele = "<span class='tags'> " + tag  + "</span> &nbsp;"
+      $("#tagTable").append(ele)
+      $(".tag_box").val("") 
+   }
+}
+
+function deleteAllTags(){
+   var myNode = document.getElementById("tagTable");
+   var fc = myNode.children[1];
+   while( fc ) {
+      myNode.removeChild( fc );
+      fc = myNode.firstChild;
+   }
+}
+
+
+
+function getAllTags(){
+   tags = $(".tags")
+   tagArr = []
+   $.each(tags, function( i, value ) {
+      tagArr.push(value.innerHTML.toString().trim() )
+      });
+   return tagArr
 }

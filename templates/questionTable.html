@@ -29,9 +29,11 @@
                                 </div>
                             </div>
                             <div id="searchMe" class="panel-body" class="col-md-12">
+                                
                                 <span style='display: inline-block'>
                                     <!-- <button id='clickme'>Search</button> -->
-                                    <input style='width:700px; height:40px; border-radius:5px; border-color: rgb(198, 221, 198)' type="text"  id="dev-table-filter" data-action="filter" data-filters="#dev-table" placeholder="Filter Question" />
+                                    <input style='width:600px; height:35px; border-radius:5px; border-color: rgb(198, 221, 198)' type="text"  id="dev-table-filter" data-action="filter" data-filters="#dev-table" placeholder="Filter Question" />
+                                    <span><input class='tag_box' type="text" placeholder="Add Tags"/> </span> <input id="addTag" type='button' value="Add Tag"/> <input id="clearTag" type='button' value="Clear Tags"/> 
                                     <select>
                                         <option value="25">25</option>
                                         <option value="50">50</option>
@@ -40,7 +42,10 @@
                                     </select>
                                     
                                     
+                                    
                                 </span>
+                                
+                                <span id='tagTable'>     </span>
                                 <!-- <span><input style='width:700px;'type="text" class="form-control" id="dev-table-filter" data-action="filter" data-filters="#dev-table" placeholder="Filter Question" /></span> -->
                                 
                             </div>
@@ -49,7 +54,7 @@
                                     <tr style='overflow: hidden'>
                                         <th>    <a id='sortId'>#</a>            </th>
                                         <th>    <a id='sortTitle'>Questions</a>    </th>
-                                        <th>    <a id='sortUser'>User</a>         </th>
+                                        <th>    <a id='sortUser'>Tags</a>         </th>
                                         <th>    <a id='sortDate'>Date</a>         </th>
                                     </tr>
                                 </thead>
@@ -60,7 +65,7 @@
                                         <th>{{count.a}}</th>
                                         {% set count.a = count.a + 1 %}
                                         <th onmouseover='' style='cursor: pointer'><a class='kevin' id="{{item['_id']}}">{{item['title']}} </a></th>
-                                        <th>{{item['user']['username']}}</th>
+                                        <th>{{ "[" + ", ".join(item['tags']) +"]"}}</th>
                                         <th>{{item['timestamp'] | ctime}}</th>                                       
                                     </tr> 
                                     
