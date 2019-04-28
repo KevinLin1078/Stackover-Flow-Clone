@@ -318,7 +318,7 @@ function addTag(){
 
 function deleteAllTags(){
    var myNode = document.getElementById("tagTable");
-   var fc = myNode.children[1];
+   var fc = myNode.children[0];
    while( fc ) {
       myNode.removeChild( fc );
       fc = myNode.firstChild;
