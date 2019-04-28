@@ -11,11 +11,11 @@ $(document).ready(function(){
          showAnswer()
       }, 50);
    })
-   $(document).on( 'click', '.tags', function() {
-      alert('c1')
-      $(this).parent.remove()
-      alert('c2')
-   })
+   // $(document).on( 'click', '.tags', function() {
+   //    alert('c1')
+   //    $(this).parent.remove()
+   //    alert('c2')
+   // })
    $(document).on( 'click', '#badA', function() {
       aid = $(this).attr("name")
       upvoteAnswer(aid, false)
@@ -26,6 +26,7 @@ $(document).ready(function(){
 
    $('#clearTag').click(function(e){
       deleteAllTags()
+      search()
    })
    $("#goodQ").click( function(e) {
       upvoteQuestion(true)
@@ -47,6 +48,7 @@ $(document).ready(function(){
    
    $("#addTag").click( function(e) {
       addTag()
+      search()
    })
    
    $("#logout").click( function(e) {
@@ -56,9 +58,6 @@ $(document).ready(function(){
    $('#back_button').click(
        function(){
          window.location.href='/searchOK'
-         //   $('#actual_body').hide()
-         //   $('#dev-table').show()
-         //   $('#searchMe').show()
        }
    )
    
