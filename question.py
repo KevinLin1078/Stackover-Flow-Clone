@@ -28,8 +28,8 @@ def addQuestion():
 	if request.method == "GET":
 		return render_template('addQuestion.html')
 	if(request.method == 'POST'):
-		name = request.cookies.get('username')
-		password = request.cookies.get('password')
+		name = request.cookies.get('username')encode("utf-8")
+		password = request.cookies.get('password')encode("utf-8")
 		if is_login(name, password) == False:
 			print('Add Question Wrong SESSION', (name, password))		
 			return responseNO({'status': 'error', 'error': 'Wrong user session'})
