@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 from bson.objectid import ObjectId
 app = Flask(__name__)
-client = MongoClient()
+client = MongoClient('130.245.170.76', 27017)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -30,7 +30,7 @@ upvoteTable = db['upvote']
 
 
 from cassandra.cluster import Cluster
-cluster = Cluster()
+cluster = Cluster(['130.245.170.76'])
 cassSession = cluster.connect(keyspace='hw5')
 @bp.route('/', methods=['GET'])
 @bp.route('/search', methods=['GET'])
@@ -48,7 +48,6 @@ def adduser():
 		name = jss['username']
 		email = jss['email']
 		user_exist = userTable.find_one({'username': name})
-		# email_exist = userTable.find_one({'email': email})
 		if user_exist != None :
 			return responseNO({'status':'error', 'error': 'Duplicate user'})
 		password = jss['password']
@@ -103,20 +102,26 @@ def login():
 			return responseNO({'status': 'error', 'error':"Login user does not exist"})
 			
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
-			session['user'] = jss['username']
-			return responseOK({'status': 'OK'})
+			headers = {'Content-Type': 'application/json'}
+			response = make_response(jsonify({"status": "OK"}), 200, headers)
+			response.set_cookie('username', jss['username'])
+			response.set_cookie('password', jss['password'])
+			return response
 		else:
 			return responseNO({'status': 'error', 'error':"Wrong key-email pair"})
 
 
-@bp.route('/logout', methods=["POST", "GET"])
-def logout():
-	if request.method =="POST":
-		print("LogOUT")
-		#session.clear()
-		logTable = db['logme']
-		logTable.insert({"ip": request.remote_addr})
-		return responseOK({'status': 'OK'})
+# @bp.route('/logout', methods=["POST", "GET"])
+# def logout():
+# 	if request.method =="POST":
+# 		try:
+# 			headers = {'Content-Type': 'application/json'}
+# 			response = make_response(jsonify({"status": "OK"}), 200, headers)
+# 			response.set_cookie('username', '', expires = 0)
+# 			response.set_cookie('password', '', expires = 0)
+# 			return response
+# 		except Exception as e:
+# 			return responseNO({'status': 'error'})
 
 
 @bp.route('/user/<getName>', methods=["GET"])
@@ -173,16 +178,19 @@ def timectime(s):
 
 @bp.route('/addmedia', methods=["POST"])
 def addMedia():
-	if len(session) == 0:
+	name = request.cookies.get('username')
+	password = request.cookies.get('password')
+	if is_login(name, password) == False:
 		print('Add Media User not logged in')	
 		return responseNO({'status': 'error', 'error': 'Please login to add media'})
+	
 	fileID = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(40))
 	file = request.files.get('content')
 	filetype = file.content_type
 
 	b = bytearray(file.read())
 	cqlinsert = "INSERT INTO imgs(fileID, content, filetype, username) VALUES (%s, %s, %s, %s);"
-	cassSession.execute(cqlinsert, (fileID, b, filetype, session['user']))
+	cassSession.execute(cqlinsert, (fileID, b, filetype, name))
 	return responseOK({'status': 'OK', 'id': fileID})
 
 @bp.route('/media/<mediaID>', methods=["GET"])
@@ -230,3 +238,8 @@ def responseNO(stat):
 	return respond
 
 
+def is_login(username, password):
+	user = userTable.find_one({'username': username, 'password': password})
+	if user == None:
+		return False
+	return True

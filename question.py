@@ -20,7 +20,7 @@ upvoteTable = db['upvote']
 mediaTable = db['mediaID']
 
 from cassandra.cluster import Cluster
-cluster = Cluster()
+cluster = Cluster(['130.245.170.76'])
 cassSession = cluster.connect(keyspace='hw5')
 
 @bp.route('/questions/add', methods=["POST", "GET"])
@@ -28,9 +28,12 @@ def addQuestion():
 	if request.method == "GET":
 		return render_template('addQuestion.html')
 	if(request.method == 'POST'):
-		if len(session) == 0:
-			print('Add Question Wrong SESSION')	
-			return responseOK({'status': 'error', 'error': 'Wrong user session'})
+		name = request.cookies.get('username')
+		password = request.cookies.get('password')
+		if is_login(name, password) == False:
+			print('Add Question Wrong SESSION')		
+			return responseNO({'status': 'error', 'error': 'Wrong user session'})
+
 		title = None
 		body = None
 		tags = None
@@ -51,7 +54,7 @@ def addQuestion():
 						query = "SELECT * FROM imgs WHERE fileID = '" + item + "';"
 						row = cassSession.execute(query)[0]
 						name = row[3]
-						if name != session['user']:
+						if name != request.cookies.get('username'):
 							return responseOK({ 'status': 'error', 'error':"media does not belong to poster"}) 
 
 		if ('title' in d) and ('body' in d) and ('tags' in d) :
@@ -61,7 +64,7 @@ def addQuestion():
 		else:
 			return responseOK({'status': 'error', 'error': 'Json key doesnt exist'})
 				
-		username = session['user']
+		username = request.cookies.get('username')
 		user_filter = userTable.find_one({'username': username})
 		reputation = user_filter['reputation']
 		question =	{
@@ -102,13 +105,15 @@ def getQuestion(IDD):
 		ip = str(ip)
 		plus = 0
 
-		if len(session) == 0:
+		name = request.cookies.get('username')
+		password = request.cookies.get('password')
+		if is_login(name, password) == False:
 			if ipTable.find_one({'ip':ip , 'pid':pid}) == None:
 				ipTable.insert({'ip':ip, 'pid': pid})
 				plus = 1
-		if len(session) != 0:
-			if ipTable.find_one({'ipN': session['user'] , 'pid':pid} ) == None:
-				ipTable.insert({'ipN': session['user'], 'pid': pid})
+		else:
+			if ipTable.find_one({'ipN': name , 'pid':pid} ) == None:
+				ipTable.insert({'ipN' : name, 'pid': pid})
 				plus = 1
 		
 		count = result['view_count']
@@ -150,9 +155,11 @@ def getQuestion(IDD):
 
 	elif request.method == 'DELETE':
 		print("=========================QUESTION/ID====DELETE===============================")
-		if len(session) == 0:
-			print("CANT DELETE USER NOT LOGGED IN")
-			return responseNO({'status':'error', 'error': 'user not logged in'})
+		name = request.cookies.get('username')
+		password = request.cookies.get('password')
+		if is_login(name, password) == False:
+			print('Add Question Wrong SESSION')		
+			return responseNO({'status': 'error', 'error': 'Wrong user session'})
 		else:
 			pid = ObjectId(str(IDD))
 			result = questionTable.find_one({'_id':pid})
@@ -161,7 +168,7 @@ def getQuestion(IDD):
 				return responseNO({'status':'error','error':'Question does not exist'})
 
 			username = result['user']['username']
-			if session['user'] != username:
+			if name != username:
 				print('FAILED DELTED, user is not original')
 				return responseNO({'status':'error', 'error': 'Not orginal user'})
 			else:
@@ -191,9 +198,12 @@ def getQuestion(IDD):
 @bp.route('/questions/<IDD>/answers/add', methods=["POST", "GET"])
 def addAnswer(IDD):
 	if request.method == 'POST':
-		if len(session) == 0:
+		name = request.cookies.get('username')
+		password = request.cookies.get('password')
+		if is_login(name, password) == False:
 			print("NO session answer")
 			return responseOK({'status': 'error','error': 'not logged in'})
+		
 		pid = ObjectId(str(IDD))
 		body = request.json['body']
 		media = []
@@ -210,22 +220,22 @@ def addAnswer(IDD):
 						query = "SELECT * FROM imgs WHERE fileID = '" + item + "';"
 						row = cassSession.execute(query)[0]
 						name = row[3]
-						if name != session['user']:
+						if name != request.cookies.get('username'):
 							return responseOK({ 'status': 'error', 'error':"media does not belong to poster"}) 
 
-		userID = userTable.find_one({'username': session['user']})['_id']
+		userID = userTable.find_one({'username': request.cookies.get('username')})['_id']
 		userID = str(userID)
 		
 		answer = 	{
 					'pid': pid,
 					'body':body,
 					'media': media,
-					'user': session['user'],
+					'user': request.cookies.get('username'),
 					'userID':  userID,
 					'timestamp': (time.time()),
 					'is_accepted': False,
 					'score' : 0,
-					'username': session['user']
+					'username': request.cookies.get('username')
 					}
 		aid = answerTable.insert(answer)
 		aid = str(aid)
@@ -267,12 +277,14 @@ def getAnswers(IDD):
 def upvoteQuestion(IDD):
 	if request.method == 'POST':
 		pid = str(IDD)
-		if len(session) == 0:
+		name = request.cookies.get('username')
+		password = request.cookies.get('password')
+		if is_login(name, password) == False:
 			print('upvote Wrong session')
 			return responseOK({'status': 'error','error': 'Please login to upvote question'})
 		print('===========================/questions/<IDD>/upvote===================================')
 		upvote = request.json['upvote']
-		user = session['user']
+		user = request.cookies.get('username')
 		print ([pid, upvote, user]  )
 		result = upvoteTable.find_one({'username' : user, 'pid': pid} )
 		questionResult = questionTable.find_one( {'_id': ObjectId(str(IDD)) })
@@ -311,11 +323,13 @@ def upvoteAnswer(IDD):
 	if request.method == 'POST':
 		aid = str(IDD)
 		
-		if len(session) == 0:
+		name = request.cookies.get('username')
+		password = request.cookies.get('password')
+		if is_login(name, password) == False:
 			return responseOK({'status': 'error','error': 'Please login to upvote answer'})
 		print('===========================/answers/<IDD>/upvote===================================')
 		upvote = request.json['upvote']
-		user = session['user']
+		user = request.cookies.get('username')
 		print ([aid, upvote, user]  )
 		result = upvoteTable.find_one({'username' : user, 'aid': aid} )
 		answerResult = answerTable.find_one( {'_id': ObjectId(str(IDD)) })
@@ -354,7 +368,9 @@ def upvoteAnswer(IDD):
 @bp.route('/answers/<IDD>/accept', methods=['POST'])
 def acceptAnswer(IDD):
 	if request.method == 'POST':
-		if len(session) == 0:
+		name = request.cookies.get('username')
+		password = request.cookies.get('password')
+		if is_login(name, password) == False:
 			return responseOK({'status': 'error','error': 'Please login to accept answer'})
 		aid = ObjectId(str(IDD))
 		print('--------------------------------------ACCEPT--------------------------')
@@ -363,7 +379,7 @@ def acceptAnswer(IDD):
 		
 		question = questionTable.find_one({'_id': pid })
 		poster = question['username']
-		if session['user'] != poster:
+		if request.cookies.get('username') != poster:
 			return responseOK({'status': 'error', 'error': 'Not original poster'})
 		
 		qq = questionTable.find_one({'_id': pid })
@@ -665,3 +681,9 @@ def tagFinder(questFilter, ret, tags):
 			ret.append(temp)
 		else:
 			containAll =True
+
+def is_login(username, password):
+	user = userTable.find_one({'username': username, 'password': password})
+	if user == None:
+		return False
+	return True
