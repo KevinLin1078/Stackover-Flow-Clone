@@ -181,7 +181,7 @@ def addMedia():
 	name = request.cookies.get('username')
 	password = request.cookies.get('password')
 	if is_login(name, password) == False:
-		print('Add Media User not logged in')	
+		print('Add Media User not logged in', (name, password))	
 		return responseNO({'status': 'error', 'error': 'Please login to add media'})
 	
 	fileID = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(40))
