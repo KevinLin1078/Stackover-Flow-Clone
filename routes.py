@@ -97,14 +97,15 @@ def login():
 		print('==========*********************LOGIN')
 		jss =request.json
 		print(jss)
-		get_user = userTable.find_one( { 'username': str(jss['username']) } )
+		name = str(jss['username'])
+		get_user = userTable.find_one( { 'username': name } )
 		if( get_user == None):
 			return responseNO({'status': 'error', 'error':"Login user does not exist"})
 			
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
 			headers = {'Content-Type': 'application/json'}
 			response = make_response(jsonify({"status": "OK"}), 200, headers)
-			response.set_cookie('username', jss['username'])
+			response.set_cookie('username', name)
 			response.set_cookie('password', jss['password'])
 			return response
 		else:
