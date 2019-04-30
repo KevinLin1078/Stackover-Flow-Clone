@@ -180,17 +180,17 @@ def login():
 			return responseNO({'status': 'error', 'error':"Wrong key-email pair"})
 
 
-# @bp.route('/logout', methods=["POST", "GET"])
-# def logout():
-# 	if request.method =="POST":
-# 		try:
-# 			headers = {'Content-Type': 'application/json'}
-# 			response = make_response(jsonify({"status": "OK"}), 200, headers)
-# 			response.set_cookie('username', '', expires = 0)
-# 			response.set_cookie('password', '', expires = 0)
-# 			return response
-# 		except Exception as e:
-# 			return responseNO({'status': 'error'})
+@bp.route('/logout', methods=["POST", "GET"])
+def logout():
+	if request.method =="POST":
+		try:
+			headers = {'Content-Type': 'application/json'}
+			response = make_response(jsonify({"status": "OK"}), 200, headers)
+			response.set_cookie('username', '', expires = 0)
+			response.set_cookie('password', '', expires = 0)
+			return response
+		except Exception as e:
+			return responseNO({'status': 'error'})
 
 
 @bp.route('/user/<getName>', methods=["GET"])
