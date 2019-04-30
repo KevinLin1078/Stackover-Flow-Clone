@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g
-from werkzeug.security import check_password_hash, generate_password_hash
+
 import  datetime
 from flask_mail import Mail
 from flask_mail import Message
@@ -31,7 +31,7 @@ def addQuestion():
 		name = request.cookies.get('username')
 		password = request.cookies.get('password')
 		if is_login(name, password) == False:
-			print('Add Question Wrong SESSION')		
+			print('Add Question Wrong SESSION', (name, password))		
 			return responseNO({'status': 'error', 'error': 'Wrong user session'})
 
 		title = None
