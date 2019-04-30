@@ -105,7 +105,7 @@ def login():
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
 			headers = {'Content-Type': 'application/json'}
 			response = make_response(jsonify({"status": "OK"}), 200, headers)
-			response.set_cookie('user', name)
+			response.set_cookie('username', name)
 			response.set_cookie('password', jss['password'])
 			return response
 		else:
@@ -179,7 +179,7 @@ def timectime(s):
 
 @bp.route('/addmedia', methods=["POST"])
 def addMedia():
-	name = request.cookies.get('user')
+	name = request.cookies.get('username')
 	password = request.cookies.get('password')
 	if is_login(name, password) == False:
 		print('Add Media User not logged in', (name, password))	
