@@ -1,3 +1,4 @@
+
 from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g,make_response, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 import  datetime
@@ -38,74 +39,6 @@ def index():
 	return redirect(url_for('question.searchOK'))
 
 
-
-@bp.route('/questions/add', methods=["POST", "GET"])
-def addQuestion():
-	if request.method == "GET":
-		return render_template('addQuestion.html')
-	if(request.method == 'POST'):
-		name = request.cookies.get('username')
-		password = request.cookies.get('password')
-		if is_login(name, password) == False:
-			print('Add Question Wrong SESSION', (name, password))		
-			return responseNO({'status': 'error', 'error': 'Wrong user session'})
-
-		title = None
-		body = None
-		tags = None
-		media = []
-		d = request.json
-		
-
-		if 'media' in d:
-			media = request.json['media']
-			print('Quesiotns/ADD +++++++++++++++++++++++++++++MEDIA: ', media)
-			if len(media) != 0:
-				for item in media:
-						is_found = mediaTable.find_one({"mediaID": item})
-						if is_found:
-							print('Media ID FOUND IN ANOTHER QUESTION ')
-							return responseOK({ 'status': 'error', 'error':"media ID already exists"}) 
-						
-						query = "SELECT * FROM imgs WHERE fileID = '" + item + "';"
-						row = cassSession.execute(query)[0]
-						name = row[3]
-						if name != request.cookies.get('username'):
-							return responseOK({ 'status': 'error', 'error':"media does not belong to poster"}) 
-
-		if ('title' in d) and ('body' in d) and ('tags' in d) :
-			title = request.json['title'].encode("utf-8")
-			body = request.json['body'].encode("utf-8")
-			tags = request.json['tags']
-		else:
-			return responseOK({'status': 'error', 'error': 'Json key doesnt exist'})
-				
-		username = request.cookies.get('username')
-		user_filter = userTable.find_one({'username': username})
-		reputation = user_filter['reputation']
-		question =	{
-									'user': {	'username': str(username),
-														'reputation': reputation
-													},
-									'title': title, 
-									'body': body,
-									'score': 0,
-									'view_count': 0,
-									'answer_count': 0,
-									'timestamp': int(time.time()),
-									'media': media,
-									'tags': tags,
-									'accepted_answer_id': None,
-									'username': str(username),
-									'realIP': request.remote_addr
-								}
-		pid = questionTable.insert(question)
-		pid = str(pid)
-		for item in media:
-			mediaTable.insert({"mediaID": item, 'pid': pid})
-
-		return responseOK({ 'status': 'OK', 'id':pid}) 
-
 @bp.route('/adduser', methods=["POST", "GET"])
 def adduser():	
 	if request.method == "GET":
@@ -116,6 +49,7 @@ def adduser():
 		name = jss['username']
 		email = jss['email']
 		user_exist = userTable.find_one({'username': name})
+		# email_exist = userTable.find_one({'email': email})
 		if user_exist != None :
 			return responseNO({'status':'error', 'error': 'Duplicate user'})
 		password = jss['password']
@@ -165,17 +99,13 @@ def login():
 		print('==========*********************LOGIN')
 		jss =request.json
 		print(jss)
-		name = str(jss['username'])
-		get_user = userTable.find_one( { 'username': name } )
+		get_user = userTable.find_one( { 'username': str(jss['username']) } )
 		if( get_user == None):
 			return responseNO({'status': 'error', 'error':"Login user does not exist"})
 			
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
-			headers = {'Content-Type': 'application/json'}
-			response = make_response(jsonify({"status": "OK"}), 200, headers)
-			response.set_cookie('username', name)
-			response.set_cookie('password', jss['password'])
-			return response
+			session['user'] = jss['username']
+			return responseOK({'status': 'OK'})
 		else:
 			return responseNO({'status': 'error', 'error':"Wrong key-email pair"})
 
@@ -183,14 +113,11 @@ def login():
 @bp.route('/logout', methods=["POST", "GET"])
 def logout():
 	if request.method =="POST":
-		try:
-			headers = {'Content-Type': 'application/json'}
-			response = make_response(jsonify({"status": "OK"}), 200, headers)
-			response.set_cookie('username', '', expires = 0)
-			response.set_cookie('password', '', expires = 0)
-			return response
-		except Exception as e:
-			return responseNO({'status': 'error'})
+		print("LogOUT")
+		#session.clear()
+		logTable = db['logme']
+		logTable.insert({"ip": request.remote_addr})
+		return responseOK({'status': 'OK'})
 
 
 @bp.route('/user/<getName>', methods=["GET"])
@@ -247,20 +174,16 @@ def timectime(s):
 
 @bp.route('/addmedia', methods=["POST"])
 def addMedia():
-	name = request.cookies.get('username')
-	password = request.cookies.get('password')
-	print('Add Media', (name, password))	
-	if is_login(name, password) == False:
-		print('Add Media User not logged in', (name, password))	
+	if len(session) == 0:
+		print('Add Media User not logged in')	
 		return responseNO({'status': 'error', 'error': 'Please login to add media'})
-	
 	fileID = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(40))
 	file = request.files.get('content')
 	filetype = file.content_type
 
 	b = bytearray(file.read())
 	cqlinsert = "INSERT INTO imgs(fileID, content, filetype, username) VALUES (%s, %s, %s, %s);"
-	cassSession.execute(cqlinsert, (fileID, b, filetype, name))
+	cassSession.execute(cqlinsert, (fileID, b, filetype, session['user']))
 	return responseOK({'status': 'OK', 'id': fileID})
 
 @bp.route('/media/<mediaID>', methods=["GET"])
@@ -307,9 +230,3 @@ def responseNO(stat):
 	respond = Response(jsonData,status=404, mimetype='application/json')
 	return respond
 
-
-def is_login(username, password):
-	user = userTable.find_one({'username': username, 'password': password})
-	if user == None:
-		return False
-	return True
