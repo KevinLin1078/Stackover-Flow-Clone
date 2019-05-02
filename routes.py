@@ -230,7 +230,7 @@ def clean():
 	print(cc)
 	cqlinsert = "TRUNCATE imgs;"
 	cassSession.execute(cqlinsert)
-	return 'cleaned ' + str(cc)
+	return 'cleaned ' + str(cc) +' Question:  ' + str(questionTable.find({}).count())
 
 
 def responseOK(stat):
