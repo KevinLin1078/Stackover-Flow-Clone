@@ -49,11 +49,8 @@ def clearMe():
 def connectM():
    client = MongoClient('130.245.170.76', 27017)
    db = client['stack']  
-   questionTable = db['question'].find()
-   for q in questionTable:
-      print(q['title'])
-      break
-
+   questionTable = db['question'].find().count()
+   print(questionTable)
 # from cassandra.cluster import Cluster
 # cluster = Cluster()
 # cassSession = cluster.connect(keyspace='hw5')

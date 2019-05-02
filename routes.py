@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, abort, Flask, request, url_for, json, redirect, Response, session, g,make_response, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 import  datetime
@@ -11,7 +10,7 @@ from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 from bson.objectid import ObjectId
 app = Flask(__name__)
-client = MongoClient('130.245.170.76', 27017)
+client = MongoClient()
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -28,16 +27,38 @@ questionTable = db['question']
 ipTable = db['ip']
 upvoteTable = db['upvote']
 
-
-
 from cassandra.cluster import Cluster
-cluster = Cluster(['130.245.170.76'])
+cluster = Cluster()
 cassSession = cluster.connect(keyspace='hw5')
-@bp.route('/', methods=['GET'])
-@bp.route('/search', methods=['GET'])
-def index():
-	return redirect(url_for('question.searchOK'))
+# @bp.route('/', methods=['GET'])
+# def index():
+# 	return redirect(url_for('question.searchOK'))
 
+# from celery import Celery
+# app.config['CELERY_BROKER_URL'] = 'amqp://localhost//'
+
+# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+# celery.conf.update(app.config)
+
+from threading import Thread
+
+def threading(f):
+    def wrapper(*args, **kwargs):
+        thr = Thread(target=f, args=args, kwargs=kwargs)
+        thr.start()
+    return wrapper
+
+
+@threading
+def sendEmail(email):
+	msg = MIMEText('validation key:<' + "keykey1212" +'>')
+	msg["From"] = "ktube37@gmail.com"
+	msg["To"] = email
+	msg["Subject"] = "Hello"
+	p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE)
+	p.communicate(msg.as_string())
+	print("CELRY")
+	return
 
 @bp.route('/adduser', methods=["POST", "GET"])
 def adduser():	
@@ -62,13 +83,7 @@ def adduser():
 					'reputation': 1
 				}
 		userTable.insert(user)
-
-		msg = MIMEText('validation key:<' + key +'>')
-		msg["From"] = "ktube37@gmail.com"
-		msg["To"] = email
-		msg["Subject"] = "Hello"
-		p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE)
-		p.communicate(msg.as_string())
+		sendEmail(email)
 		return responseOK({'status':'OK'})
 
 
@@ -229,4 +244,3 @@ def responseNO(stat):
 	jsonData = json.dumps(data)
 	respond = Response(jsonData,status=404, mimetype='application/json')
 	return respond
-
