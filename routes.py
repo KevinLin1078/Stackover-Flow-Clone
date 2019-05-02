@@ -223,6 +223,7 @@ def getMedia(mediaID):
 @bp.route('/ginger', methods=["GET"])
 def clean():
 	import clean
+	brk = str(questionTable.find({}).count())
 	clean.clearMe()
 
 	query = "SELECT count(*) FROM imgs;"
@@ -230,7 +231,7 @@ def clean():
 	print(cc)
 	cqlinsert = "TRUNCATE imgs;"
 	cassSession.execute(cqlinsert)
-	return 'cleaned ' + str(cc) +' Question:  ' + str(questionTable.find({}).count())
+	return 'cleaned ' + str(cc) +' Question:  ' + brk
 
 
 def responseOK(stat):

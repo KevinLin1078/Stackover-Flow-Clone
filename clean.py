@@ -46,14 +46,9 @@ def clearMe():
 
 
 
-def connectM():
-   client = MongoClient('130.245.170.76', 27017)
-   db = client['stack']  
-   questionTable = db['question'].find().count()
-   print(questionTable)
-# from cassandra.cluster import Cluster
-# cluster = Cluster()
-# cassSession = cluster.connect(keyspace='hw5')
+# def connectM():
+#    client = MongoClient('130.245.170.76', 27017)
+#    db = client['stack']  
 
 
 # query = "SELECT count(*) FROM imgs WHERE fileID = '" + 'DR5SW9DWY8GUXCEI4EKNW130YGCK3XAQF9JOA41X' + "';"
