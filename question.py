@@ -8,7 +8,7 @@ from pymongo import MongoClient
 import time
 from bson.objectid import ObjectId
 
-client = MongoClient()
+client = MongoClient('130.245.170.76', 27017)
 bp = Blueprint('question', __name__, template_folder='templates')
 
 db = client.stack
@@ -21,7 +21,7 @@ mediaTable = db['mediaID']
 
 
 from cassandra.cluster import Cluster
-cluster = Cluster()
+cluster = Cluster(['130.245.170.76'])
 cassSession = cluster.connect(keyspace='hw5')
 
 

@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 from bson.objectid import ObjectId
 app = Flask(__name__)
-client = MongoClient()
+client = MongoClient('130.245.170.76', 27017)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -28,7 +28,7 @@ ipTable = db['ip']
 upvoteTable = db['upvote']
 
 from cassandra.cluster import Cluster
-cluster = Cluster()
+cluster = Cluster(['130.245.170.76'])
 cassSession = cluster.connect(keyspace='hw5')
 # @bp.route('/', methods=['GET'])
 # def index():
