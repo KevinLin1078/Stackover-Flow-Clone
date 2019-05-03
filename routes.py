@@ -30,15 +30,6 @@ upvoteTable = db['upvote']
 from cassandra.cluster import Cluster
 cluster = Cluster(['130.245.170.76'])
 cassSession = cluster.connect(keyspace='hw5')
-# @bp.route('/', methods=['GET'])
-# def index():
-# 	return redirect(url_for('question.searchOK'))
-
-# from celery import Celery
-# app.config['CELERY_BROKER_URL'] = 'amqp://localhost//'
-
-# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-# celery.conf.update(app.config)
 
 from threading import Thread
 
@@ -47,7 +38,6 @@ def threading(f):
         thr = Thread(target=f, args=args, kwargs=kwargs)
         thr.start()
     return wrapper
-
 
 @threading
 def sendEmail(email):
@@ -70,7 +60,6 @@ def adduser():
 		name = jss['username']
 		email = jss['email']
 		user_exist = userTable.find_one({'username': name})
-		# email_exist = userTable.find_one({'email': email})
 		if user_exist != None :
 			return responseNO({'status':'error', 'error': 'Duplicate user'})
 		password = jss['password']
@@ -85,8 +74,6 @@ def adduser():
 		userTable.insert(user)
 		sendEmail(email)
 		return responseOK({'status':'OK'})
-
-
 
 @bp.route('/verify', methods=["POST", "GET"])
 def verify():
@@ -114,25 +101,35 @@ def login():
 		print('==========*********************LOGIN')
 		jss =request.json
 		print(jss)
-		get_user = userTable.find_one( { 'username': str(jss['username']) } )
+		name = str(jss['username'])
+		get_user = userTable.find_one( { 'username': name } )
 		if( get_user == None):
 			return responseNO({'status': 'error', 'error':"Login user does not exist"})
 			
 		if get_user['password'] == jss['password'] and get_user['verified'] == 'yes':
-			session['user'] = jss['username']
-			return responseOK({'status': 'OK'})
+			headers = {'Content-Type': 'application/json'}
+			response = make_response(jsonify({"status": "OK"}), 200, headers)
+
+			import datetime
+			expire_date = datetime.datetime.now()
+			expire_date = expire_date + datetime.timedelta(days=90)
+			response.set_cookie('token', name, expires=expire_date)
+			return response
 		else:
 			return responseNO({'status': 'error', 'error':"Wrong key-email pair"})
 
 
-@bp.route('/logout', methods=["POST", "GET"])
-def logout():
-	if request.method =="POST":
-		print("LogOUT")
-		#session.clear()
-		logTable = db['logme']
-		logTable.insert({"ip": request.remote_addr})
-		return responseOK({'status': 'OK'})
+# @bp.route('/logout', methods=["POST", "GET"])
+# def logout():
+# 	if request.method =="POST":
+# 		try:
+# 			headers = {'Content-Type': 'application/json'}
+# 			response = make_response(jsonify({"status": "OK"}), 200, headers)
+# 			response.set_cookie('username', '', expires = 0)
+# 			response.set_cookie('password', '', expires = 0)
+# 			return response
+# 		except Exception as e:
+# 			return responseNO({'status': 'error'})
 
 
 @bp.route('/user/<getName>', methods=["GET"])
@@ -189,16 +186,18 @@ def timectime(s):
 
 @bp.route('/addmedia', methods=["POST"])
 def addMedia():
-	if len(session) == 0:
-		print('Add Media User not logged in')	
+	name = request.cookies.get('token')
+	if not name:
+		print('Add Media User not logged in', (name))	
 		return responseNO({'status': 'error', 'error': 'Please login to add media'})
+	
 	fileID = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(40))
 	file = request.files.get('content')
 	filetype = file.content_type
 
 	b = bytearray(file.read())
 	cqlinsert = "INSERT INTO imgs(fileID, content, filetype, username) VALUES (%s, %s, %s, %s);"
-	cassSession.execute(cqlinsert, (fileID, b, filetype, session['user']))
+	cassSession.execute(cqlinsert, (fileID, b, filetype, name))
 	return responseOK({'status': 'OK', 'id': fileID})
 
 @bp.route('/media/<mediaID>', methods=["GET"])
@@ -223,7 +222,6 @@ def getMedia(mediaID):
 @bp.route('/ginger', methods=["GET"])
 def clean():
 	import clean
-	brk = str(questionTable.find({}).count())
 	clean.clearMe()
 
 	query = "SELECT count(*) FROM imgs;"
@@ -231,7 +229,7 @@ def clean():
 	print(cc)
 	cqlinsert = "TRUNCATE imgs;"
 	cassSession.execute(cqlinsert)
-	return 'cleaned ' + str(cc) +' Question:  ' + brk
+	return 'cleaned ' + str(cc)
 
 
 def responseOK(stat):
@@ -245,3 +243,10 @@ def responseNO(stat):
 	jsonData = json.dumps(data)
 	respond = Response(jsonData,status=404, mimetype='application/json')
 	return respond
+
+
+def is_login(username, password):
+	user = userTable.find_one({'username': username, 'password': password})
+	if user == None:
+		return False
+	return True
