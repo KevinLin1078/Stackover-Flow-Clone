@@ -43,9 +43,22 @@ def clearMe():
    upvoteTable.delete_many({})
    mediaTable.delete_many({})
    print('UPDATED DATA')
+   questionTable.create_index([('title', pymongo.TEXT),('body', pymongo.TEXT )], name='search_index', default_language='english')
 
+def ppp():
+   client = MongoClient('130.245.170.76', 27017)
+   db = client['stack']         #    use wp2
+   questionTable = db['question']
+   questionTable.insert({'title': 'i am a bird', 'body': 'slim body'})
+   questionTable.insert({'title': 'i fat a bird', 'body': 'gift of stupid'})
+   
+   results = questionTable.find({"$text": {"$search": 'body is a mess'}})
 
+   for i in results:
+      print(i)
 
+# clearMe()
+# ppp()
 # def connectM():
 #    client = MongoClient('130.245.170.76', 27017)
 #    db = client['stack']  

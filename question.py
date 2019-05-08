@@ -493,34 +493,34 @@ def updateAnswerScore(aid, user, aval, uval):
 
 def filter_with_query(query, timestamp, limit, sort_by, tags, has_media, accepted):
 	print("WITH QUERY")
-	search_query = {}
-	search_query['$or'] = []
+	# search_query = {}
+	# search_query['$or'] = []
 
-	query_title = {}
-	query_title['$or'] = []
+	# query_title = {}
+	# query_title['$or'] = []
 
-	query_body = {}
-	query_body['$or'] =[]
-	query = query.lower()
-	query = query.split(' ')
+	# query_body = {}
+	# query_body['$or'] =[]
+	# query = query.lower()
+	# query = query.split(' ')
 
-	for each in query:
-		term = {}
-		term['$or'] = []
-		term['$or'].append({'title':{'$regex': ' ' + each}})
-		term['$or'].append({'title':{'$regex': each + ' '}})
-		query_title['$or'].append(term)
+	# for each in query:
+	# 	term = {}
+	# 	term['$or'] = []
+	# 	term['$or'].append({'title':{'$regex': each}})
+	# 	# term['$or'].append({'title':{'$regex': each + ' '}})
+	# 	query_title['$or'].append(term)
 
-		term = {}
-		term['$or'] = []
-		term['$or'].append({'body':{'$regex': ' ' + each}})
-		term['$or'].append({'body':{'$regex': each + ' '}})
-		query_body['$or'].append(term)
+	# 	term = {}
+	# 	term['$or'] = []
+	# 	term['$or'].append({'body':{'$regex':  each}})
+	# 	# term['$or'].append({'body':{'$regex': each + ' '}})
+	# 	query_body['$or'].append(term)
 
-	search_query['$or'].append(query_title)
-	search_query['$or'].append(query_body)
-
-	results = questionTable.find(search_query)
+	# search_query['$or'].append(query_title)
+	# search_query['$or'].append(query_body)
+	
+	results = questionTable.find({"$text": {"$search": query}})
 
 	ret =[]
 	for q in results:
