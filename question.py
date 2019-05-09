@@ -36,11 +36,10 @@ def addQuestion():
 
 		title = None
 		body = None
-		tags = None
+		tags = []
 		media = []
 		d = request.json
 		
-
 		if 'media' in d:
 			media = request.json['media']
 			print('Quesiotns/ADD +++++++++++++++++++++++++++++MEDIA: ', media)
@@ -442,12 +441,9 @@ def search():
 		print("tags: ", tags )
 		print("has_media: ", has_media)
 		print("accepted: ", accepted)
-		if len(query) == 0:
-			answer = filter_without_query(timestamp, limit, sort_by, tags, has_media, accepted)
-			return responseOK(answer)
-		else:
-			answer = filter_with_query(query, timestamp, limit, sort_by, tags, has_media, accepted)
-			return responseOK(answer)
+		
+		answer = filter_with_query(query, timestamp, limit, sort_by, tags, has_media, accepted)
+		return responseOK(answer)
 
 
 def responseOK(stat):
@@ -491,116 +487,36 @@ def updateAnswerScore(aid, user, aval, uval):
 	new_repp = new_rep + uval
 	userTable.update_one({'username': user}, { "$set": {'reputation': new_repp} } )
 
+
 def filter_with_query(query, timestamp, limit, sort_by, tags, has_media, accepted):
-	print("WITH QUERY")
-	# search_query = {}
-	# search_query['$or'] = []
+   client = MongoClient('130.245.170.76', 27017)
+   db = client['stack']
+   questionTable = db['question']
+   time = {"$lte": timestamp}
+   tag = {"$all": tags}
+   media = {'$not': {'$size': 0}}
+   if has_media == False:#if media == flase, then return greater than 0
+      media = {'$size': 0}
 
-	# query_title = {}
-	# query_title['$or'] = []
+   accept =  {'$not': {'$eq': None}}
+   if accepted == False:
+      accept = {'$eq': None}
 
-	# query_body = {}
-	# query_body['$or'] =[]
-	# query = query.lower()
-	# query = query.split(' ')
-
-	# for each in query:
-	# 	term = {}
-	# 	term['$or'] = []
-	# 	term['$or'].append({'title':{'$regex': each}})
-	# 	# term['$or'].append({'title':{'$regex': each + ' '}})
-	# 	query_title['$or'].append(term)
-
-	# 	term = {}
-	# 	term['$or'] = []
-	# 	term['$or'].append({'body':{'$regex':  each}})
-	# 	# term['$or'].append({'body':{'$regex': each + ' '}})
-	# 	query_body['$or'].append(term)
-
-	# search_query['$or'].append(query_title)
-	# search_query['$or'].append(query_body)
-	
-	results = questionTable.find({"$text": {"$search": query}})
-
-	ret =[]
-	for q in results:
-		if q['timestamp'] <= timestamp:
-			ret.append(q)			
-	ret.sort(key=lambda x: x[sort_by], reverse=True) # sorts all item by timestamp or score
-	
-	accept_arr = []  
-	if accepted == True:
-		acceptTrue(ret, accept_arr)
-	elif accepted == False:
-		acceptFalse(ret, accept_arr)
-	
-	mediaArr = []
-	if has_media == True:
-		mediaTrue(accept_arr, mediaArr)
-	elif has_media == False:
-		mediaFalse(accept_arr, mediaArr)
-	
-	tagArr = []
-	if len(tags) == 0:
-		return {'status':'OK','questions': mediaArr[0:limit],'error':"With Query Media " +str(len(mediaArr[0:limit])) }
-	else:
-		tagFinder(mediaArr, tagArr, tags)
-
-	return {'status':'OK','questions': tagArr[0:limit],'error':"With Query" + str(len(tagArr[0:limit]))  }
-
-def filter_without_query(timestamp, limit, sort_by, tags, has_media, accepted):
-	print("NO QUERY")
-	questFilter = []
-	allQuestion = questionTable.find();
-	for q in allQuestion:
-		if q['timestamp'] <= timestamp:
-			questFilter.append(q)
-	print('THERE ARE ', len(questFilter))
-	questFilter.sort(key=lambda x: x[sort_by], reverse=True)
-
-	accept_arr = []  
-	if accepted == True:
-		acceptTrue(questFilter, accept_arr)
-	elif accepted == False:
-		acceptFalse(questFilter, accept_arr)
-	
-	mediaArr = []
-	if has_media == True:
-		mediaTrue(accept_arr, mediaArr)
-	elif has_media == False:
-		mediaFalse(accept_arr, mediaArr)
-	
-	tagArr = []
-	if len(tags) == 0:
-		return {'status':'OK','questions': mediaArr[0:limit],'error':"Without Query Media " +str(len(mediaArr[0:limit])) }
-	else:
-		tagFinder(mediaArr, tagArr, tags)
-
-	return {'status':'OK','questions': tagArr[0:limit],'error':"Without Query" + str(len(tagArr[0:limit]))  }
-
-
-def acceptTrue(questFilter, ret):
-	for q in questFilter:
-		if q['accepted_answer_id'] != None:
-			temp = {
-						'id': str(q['_id']),
-						'title':q['title'],
-						'body': q['body'],
-						'tags': q['tags'],
-						'answer_count': 0,
-						'media': q['media'],
-						'accepted_answer_id': q['accepted_answer_id'],
-						'user':q['user'],
-						'timestamp': q['timestamp'],
-						'score': q['score'],
-						"view_count": q['view_count']
-					}
-			ret.append(temp)
-
-def acceptFalse(questFilter, ret):
-	for q in questFilter:
-		if q['accepted_answer_id'] == None:
-			temp = {
+   allQuestion = None;
+   if len(query)== 0:
+      print("NO query")
+      if len(tags) == 0:
+         allQuestion = 	questionTable.find({'timestamp':time, 'media':media , 'accepted_answer_id': accept}).sort([(sort_by, -1)]).limit(limit)
+      else:
+         allQuestion = 	questionTable.find({'timestamp':time,'tags':tag, 'media':media , 'accepted_answer_id': accept}).sort([(sort_by, -1)]).limit(limit)
+   else:
+      if len(tags) == 0:
+         allQuestion = 	questionTable.find({"$text": {"$search": query }, 'timestamp':time, 'tags': tag, 'media':media , 'accepted_answer_id': accept}).sort([(sort_by, -1)]).limit(limit)
+      else:
+         allQuestion = 	questionTable.find({"$text": {"$search": query }, 'timestamp':time, 'media':media , 'accepted_answer_id': accept}).sort([(sort_by, -1)]).limit(limit)
+   questFilter =[]
+   for q in allQuestion:
+      temp = {
 						'id': str(q['_id']),
 						'title':q['title'],
 						'body': q['body'],
@@ -613,70 +529,8 @@ def acceptFalse(questFilter, ret):
 						'score': q['score'],
 						"view_count": q['view_count']
 					}
-			ret.append(temp)
-
-def mediaTrue(questFilter, ret):
-	for q in questFilter:
-		if q['media'] != []:
-			temp = {
-						'id': str(q['id']),
-						'title':q['title'],
-						'body': q['body'],
-						'tags': q['tags'],
-						'answer_count': 0,
-						'media': q['media'],
-						'accepted_answer_id': q['accepted_answer_id'] ,
-						'user':q['user'],
-						'timestamp': q['timestamp'],
-						'score': q['score'],
-						"view_count": q['view_count']
-					}
-			ret.append(temp)
-
-def mediaFalse(questFilter, ret):
-	for q in questFilter:
-		if q['media'] == []:
-			temp = {
-						'id': str(q['id']),
-						'title':q['title'],
-						'body': q['body'],
-						'tags': q['tags'],
-						'answer_count': 0,
-						'media': q['media'],
-						'accepted_answer_id': q['accepted_answer_id'] ,
-						'user':q['user'],
-						'timestamp': q['timestamp'],
-						'score': q['score'],
-						"view_count": q['view_count']
-					}
-			ret.append(temp)
-
-
-def tagFinder(questFilter, ret, tags):
-	containAll= True
-	for q in questFilter:
-		tag_arr = q['tags']
-		for tag in tags:
-			if tag not in tag_arr:
-				containAll = False
-				break;
-		if containAll == True:
-			temp = {
-						'id': str(q['id']),
-						'title':q['title'],
-						'body': q['body'],
-						'tags': q['tags'],
-						'answer_count': 0,
-						'media': q['media'],
-						'accepted_answer_id': q['accepted_answer_id'] ,
-						'user':q['user'],
-						'timestamp': q['timestamp'],
-						'score': q['score'],
-						"view_count": q['view_count']
-					}
-			ret.append(temp)
-		else:
-			containAll =True
+      questFilter.append(temp)
+   return questFilter
 
 def is_login(username, password):
 	user = userTable.find_one({'username': username, 'password': password})
